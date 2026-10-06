@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DSKT Mood Board</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .intro { max-width: 70ch; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .intro h1 { font-size: 34px; }
+  section.block { margin-top: 40px; }
+  section.block > h2 { margin-bottom: 4px; }
+  section.block > p { color: var(--ink-2); max-width: 70ch; margin-bottom: 16px; }
+  .refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .ref { display: flex; flex-direction: column; }
+  .ref .sketch { height: 120px; background: var(--canvas); border-bottom: 1px solid var(--line); border-radius: var(--r-2) var(--r-2) 0 0; }
+  .ref .sketch svg { width: 100%; height: 100%; display: block; }
+  .ref .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .ref .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .ref h3 { font-size: 17px; }
+  .tl { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 4px 10px; font-size: 13px; margin: 0; }
+  .tl dt { font: 500 12px/1.7 var(--f-mono); }
+  .tl dt.take { color: var(--ok); } .tl dt.leave { color: var(--crit); }
+  .tl dd { margin: 0; }
+  .ref .src { margin-top: auto; font-size: 12px; }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .sw { border: 1px solid var(--line); border-radius: var(--r-2); overflow: hidden; background: var(--surface); }
+  .sw i { display: block; height: 56px; }
+  .sw div { padding: 8px 10px; font-size: 12px; }
+  .sw b { display: block; font-weight: 600; font-size: 12.5px; }
+  .sw code { color: var(--ink-3); font-size: 11px; }
+  .type { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .type .panel-body { display: flex; flex-direction: column; gap: 8px; }
+  .vocab { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .vocab .item { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--surface); font-size: 13px; }
+  .vocab svg { width: 64px; height: 40px; background: var(--canvas); border-radius: var(--r-1); }
+  .vocab small { display: block; color: var(--ink-3); font-size: 12px; }
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .principles .panel-body { display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Design</span>
+    </a>
+    <nav class="nav" aria-label="Design pages"><div class="nav-group"><a href="index.html">Screens</a><a href="moodboard.html" aria-current="page">Mood board</a></div></nav>
+    <div class="topbar-end"><button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button></div>
+  </header>
+
+  <main class="page">
+    <div class="intro">
+      <span class="eyebrow">Design direction</span>
+      <h1>Drawn like a floor plan</h1>
+      <p class="muted">DSKT’s users draw real floors and hand out real desks. The look borrows from architectural drawings: ink linework on a quiet grid, hatched structure, dashed zones and measurements in metres. The interaction model borrows from canvas editors. Workplace views borrow the search-first habits of desk-booking tools, without their live-presence and booking features, which are outside the MVP.</p>
+    </div>
+
+    <section class="block" aria-labelledby="h-refs">
+      <h2 id="h-refs">References</h2>
+      <p>What each one taught us, and what we deliberately leave behind. These are product patterns, not assets: nothing is copied.</p>
+      <div class="refs">
+
+        <article class="panel ref">
+          <div class="sketch"><svg viewBox="0 0 320 120" aria-hidden="true"><rect x="0" y="0" width="70" height="120" fill="var(--surface)" stroke="var(--line)"/><g fill="none" stroke="var(--cat-desk)"><rect x="14" y="14" width="24" height="12"/><rect x="14" y="40" width="20" height="20"/><path d="M14 74h24v18h-10v-8H14z"/></g><path d="M100 20h180v50h-60v40H100z" fill="var(--el-fill)" stroke="var(--boundary)" stroke-width="2"/><rect x="130" y="40" width="30" height="14" fill="var(--accent-soft)" stroke="var(--info)" stroke-dasharray="4 3"/><path d="M40 20 C80 20 100 45 128 46" fill="none" stroke="var(--ink-3)" stroke-dasharray="3 3"/></svg></div>
+          <div class="body">
+            <div class="head"><h3>Arcada Planner</h3><span class="tag">MIT, React + Konva</span></div>
+            <dl class="tl">
+              <dt class="take">Take</dt><dd>Catalog on the left, drag a shape onto the plan, snapped preview before drop. Konva layering. Zustand-sized editor store.</dd>
+              <dt class="leave">Leave</dt><dd>Its local JSON document, free-angle walls, manual hit-testing and print flow. DSKT uses orthogonal polygons and backend commands.</dd>
+            </dl>
+            <p class="hint">Upstream <a href="https://github.com/mehanix/arcada">mehanix/arcada</a> is Apache-2.0, not MIT. Only reviewed MIT portions of the fork may be reused, with notices kept (AGENTS.md, engineering rule 5).</p>
+            <a class="src" href="https://github.com/fedepaj/arcada-planner">github.com/fedepaj/arcada-planner</a>
+          </div>
+        </article>
+
+        <article class="panel ref">
+          <div class="sketch"><svg viewBox="0 0 320 120" aria-hidden="true"><rect x="10" y="10" width="28" height="100" rx="4" fill="var(--surface)" stroke="var(--line)"/><g fill="var(--ink-3)"><rect x="18" y="20" width="12" height="12" rx="2" fill="var(--info)"/><rect x="18" y="40" width="12" height="12" rx="2"/><rect x="18" y="60" width="12" height="12" rx="2"/></g><rect x="230" y="10" width="80" height="100" fill="var(--surface)" stroke="var(--line)"/><g fill="var(--line-strong)"><rect x="240" y="22" width="40" height="5"/><rect x="240" y="36" width="60" height="8"/><rect x="240" y="52" width="60" height="8"/><rect x="240" y="68" width="34" height="8"/></g><rect x="110" y="44" width="60" height="30" fill="none" stroke="var(--select)" stroke-width="2"/><g fill="var(--surface)" stroke="var(--select)"><rect x="107" y="41" width="6" height="6"/><rect x="167" y="41" width="6" height="6"/><rect x="107" y="71" width="6" height="6"/><rect x="167" y="71" width="6" height="6"/></g></svg></div>
+          <div class="body">
+            <div class="head"><h3>Figma and Excalidraw</h3><span class="tag">Canvas conventions</span></div>
+            <dl class="tl">
+              <dt class="take">Take</dt><dd>V / H / hold-Space tools, wheel zoom around the cursor, a visible Zoom %, an inspector that always describes the selection, marquee select.</dd>
+              <dt class="leave">Leave</dt><dd>Resize handles and free rotation. Placements only move and quarter-turn, so DSKT shows corner markers, not draggable resize handles.</dd>
+            </dl>
+            <a class="src" href="https://excalidraw.com">excalidraw.com</a>
+          </div>
+        </article>
+
+        <article class="panel ref">
+          <div class="sketch"><svg viewBox="0 0 320 120" aria-hidden="true"><g stroke="var(--line-strong)" fill="var(--surface)"><rect x="30" y="20" width="40" height="22"/><rect x="70" y="20" width="40" height="22"/><rect x="110" y="20" width="40" height="22"/><rect x="30" y="70" width="40" height="22"/><rect x="70" y="70" width="40" height="22"/><rect x="110" y="70" width="40" height="22"/></g><g><rect x="31" y="21" width="38" height="20" fill="#3aa76d" opacity=".55"/><rect x="71" y="21" width="38" height="20" fill="#d9534f" opacity=".55"/><rect x="111" y="71" width="38" height="20" fill="#3aa76d" opacity=".55"/><rect x="71" y="71" width="38" height="20" fill="#d9534f" opacity=".55"/></g><text x="190" y="50" font-size="12" fill="var(--crit)" font-family="IBM Plex Sans">red / green only</text><path d="M188 58h100" stroke="var(--crit)"/></svg></div>
+          <div class="body">
+            <div class="head"><h3>Skedda</h3><span class="tag">Interactive 2D floor plans</span></div>
+            <dl class="tl">
+              <dt class="take">Take</dt><dd>The floor plan is the main way into the data. Click a desk, see who and when.</dd>
+              <dt class="leave">Leave</dt><dd>Availability shown by fill colour alone, and the booking framing. DSKT records long-running Assignments, so status uses glyph shape plus text.</dd>
+            </dl>
+            <a class="src" href="https://www.skedda.com">skedda.com</a>
+          </div>
+        </article>
+
+        <article class="panel ref">
+          <div class="sketch"><svg viewBox="0 0 320 120" aria-hidden="true"><rect x="20" y="16" width="130" height="28" rx="4" fill="var(--surface)" stroke="var(--line-strong)"/><circle cx="36" cy="30" r="6" fill="none" stroke="var(--ink-3)" stroke-width="2"/><g fill="var(--line-strong)"><rect x="20" y="56" width="130" height="10" rx="2"/><rect x="20" y="74" width="100" height="10" rx="2"/><rect x="20" y="92" width="116" height="10" rx="2"/></g><rect x="180" y="16" width="120" height="88" fill="var(--canvas)" stroke="var(--line)"/><g fill="none" stroke="var(--cat-desk)"><rect x="200" y="40" width="20" height="10"/><rect x="220" y="40" width="20" height="10"/><rect x="240" y="40" width="20" height="10" stroke="var(--select)" stroke-width="2.5"/></g><circle cx="250" cy="45" r="14" fill="none" stroke="var(--select)"/></svg></div>
+          <div class="body">
+            <div class="head"><h3>Robin and deskbird</h3><span class="tag">Find a colleague</span></div>
+            <dl class="tl">
+              <dt class="take">Take</dt><dd>Search first, then show the person’s desk on the map with a clear locate ring. A non-canvas list for every result.</dd>
+              <dt class="leave">Leave</dt><dd>Live presence, occupancy heatmaps and calendar sync. Attendance is deferred in DSKT.</dd>
+            </dl>
+            <a class="src" href="https://robinpowered.com">robinpowered.com</a>, <a class="src" href="https://www.deskbird.com">deskbird.com</a>
+          </div>
+        </article>
+
+        <article class="panel ref">
+          <div class="sketch"><svg viewBox="0 0 320 120" aria-hidden="true"><g fill="var(--surface)" stroke="var(--line-strong)"><rect x="20" y="20" width="200" height="80"/></g><g font-family="IBM Plex Mono" font-size="9" fill="var(--ink-2)"><text x="30" y="38">B-073</text><text x="30" y="56">B-074</text><text x="30" y="74">B-075</text><text x="30" y="92">B-076</text></g><g stroke="var(--line)"><path d="M20 44h200M20 62h200M20 80h200"/></g><g fill="var(--ok)"><circle cx="200" cy="34" r="4"/><circle cx="200" cy="52" r="4"/><circle cx="200" cy="70" r="4"/></g><path d="M196 84l4 6h-8z" fill="var(--crit)"/><text x="235" y="58" font-size="11" fill="var(--ink-3)" font-family="IBM Plex Sans">preview,</text><text x="235" y="72" font-size="11" fill="var(--ink-3)" font-family="IBM Plex Sans">then apply</text></svg></div>
+          <div class="body">
+            <div class="head"><h3>OfficeSpace</h3><span class="tag">Move management</span></div>
+            <dl class="tl">
+              <dt class="take">Take</dt><dd>Planner-grade batch work: select many spaces, preview every change, apply all or none.</dd>
+              <dt class="leave">Leave</dt><dd>Scenario planning and AI layout suggestions. Both are deferred.</dd>
+            </dl>
+            <a class="src" href="https://www.officespacesoftware.com">officespacesoftware.com</a>
+          </div>
+        </article>
+
+        <article class="panel ref">
+          <div class="sketch"><svg viewBox="0 0 320 120" aria-hidden="true"><defs><pattern id="mb-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--cat-obstacle)"/></pattern></defs><path d="M20 20h220v50h-70v34H20z" fill="none" stroke="var(--boundary)" stroke-width="2.5"/><rect x="120" y="40" width="12" height="12" fill="url(#mb-h)" stroke="var(--cat-obstacle)"/><rect x="34" y="30" width="70" height="60" fill="none" stroke="var(--cat-zone)" stroke-dasharray="5 4"/><path d="M20 112h220" stroke="var(--ink-3)"/><path d="M20 108v8M240 108v8" stroke="var(--ink-3)"/><text x="130" y="110" text-anchor="middle" font-size="9" font-family="IBM Plex Mono" fill="var(--ink-2)">22.0 m</text><rect x="250" y="20" width="60" height="40" fill="none" stroke="var(--line-strong)"/><path d="M250 34h60M276 34v26" stroke="var(--line-strong)"/></svg></div>
+          <div class="body">
+            <div class="head"><h3>Architectural drawings</h3><span class="tag">Line weights, hatching, title blocks</span></div>
+            <dl class="tl">
+              <dt class="take">Take</dt><dd>Heavy boundary line, hatched structure for Obstacles, dashed Zones, dimensions in metres, a sheet caption naming site, floor and revision.</dd>
+              <dt class="leave">Leave</dt><dd>CAD density. Plans stay readable for planners who aren’t architects.</dd>
+            </dl>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="h-pal">
+      <h2 id="h-pal">Palette</h2>
+      <p>Light theme is drafting film: grey-green paper, graphite ink, and a grid in non-photo blue, the pencil colour drafters use for construction lines. Buttons are drawn in ink. Selection is a highlighter stroke. Dark theme is a cyanotype blueprint. Category colours come from a coloured-pencil set, and every status pairs its colour with a shape and a word.</p>
+      <div class="palette" id="palette"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-type">
+      <h2 id="h-type">Type</h2>
+      <p>IBM Plex, an engineering family with a condensed cut for headings and a mono for labels and coordinates.</p>
+      <div class="type">
+        <div class="panel"><div class="panel-body"><span class="eyebrow">Headings, Plex Sans Condensed 600</span><span style="font:600 30px/1.1 var(--f-cond)">Floor 3, Tower B</span><span class="hint">Page titles, section heads, eyebrows</span></div></div>
+        <div class="panel"><div class="panel-body"><span class="eyebrow">Body, Plex Sans 400/500</span><span style="font:400 15px/1.5 var(--f-sans)">Publishing archives r13 and makes r14 the current plan in one step.</span><span class="hint">Copy, forms, tables</span></div></div>
+        <div class="panel"><div class="panel-body"><span class="eyebrow">Data, Plex Mono 400/500</span><span style="font:500 22px/1.2 var(--f-mono)">B-073, 214, 60</span><span class="hint">Labels, IDs, world coordinates, sizes</span></div></div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="h-voc">
+      <h2 id="h-voc">Map vocabulary</h2>
+      <p>One renderer, two modes. Every Facilities and Workplace map uses these marks.</p>
+      <div class="vocab">
+        <div class="item"><svg viewBox="0 0 64 40"><path d="M6 6h40v14h12v14H6z" fill="var(--canvas)" stroke="var(--boundary)" stroke-width="2.5"/></svg><span>Floor Boundary<small>Heaviest line; outside is shaded</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><rect x="8" y="8" width="48" height="24" fill="var(--cat-zone)" fill-opacity=".08" stroke="var(--cat-zone)" stroke-dasharray="5 3"/></svg><span>Zone<small>Dashed, tinted, uppercase name</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><defs><pattern id="v-h" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="var(--el-fill)"/><line x1="0" y1="0" x2="0" y2="4" stroke="var(--cat-obstacle)"/></pattern></defs><rect x="22" y="10" width="20" height="20" fill="url(#v-h)" stroke="var(--cat-obstacle)" stroke-width="1.5"/></svg><span>Obstacle<small>Hatched like cut structure</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><rect x="8" y="12" width="48" height="16" fill="var(--el-fill)" stroke="var(--cat-desk)" stroke-width="1.5"/><text x="12" y="23.5" font-size="8" font-family="IBM Plex Mono" fill="var(--ink-2)">A-012</text></svg><span>Desk<small>White interior, category border</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><rect x="8" y="12" width="48" height="16" fill="var(--el-fill)" stroke="var(--cat-desk)" stroke-width="1.5"/><circle cx="48" cy="20" r="5.5" fill="var(--ink-2)"/><text x="48" y="22.6" font-size="5.5" text-anchor="middle" font-family="IBM Plex Sans" font-weight="600" fill="var(--el-fill)">RI</text></svg><span>Occupied<small>Filled disc with initials</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><rect x="8" y="12" width="48" height="16" fill="var(--el-fill)" stroke="var(--cat-desk)" stroke-width="1.5"/><circle cx="48" cy="20" r="5" fill="none" stroke="var(--info)" stroke-dasharray="2 1.4" stroke-width="1.2"/><path d="M48 16.5V20l2.6 1.6" fill="none" stroke="var(--info)"/></svg><span>Starts soon<small>Dashed ring with clock hand</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><defs><pattern id="v-w" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="3" fill="var(--warn-soft)"/><line x1="0" y1="0" x2="0" y2="3" stroke="var(--warn)" stroke-width=".7"/></pattern></defs><rect x="8" y="12" width="48" height="16" fill="url(#v-w)" stroke="var(--cat-desk)" stroke-width="1.5"/><path d="M48 14.5l5.5 10h-11z" fill="var(--warn)"/></svg><span>Occupant inactive<small>Warning hatch plus triangle</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><rect x="8" y="12" width="48" height="16" fill="var(--crit-soft)" stroke="var(--crit)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Invalid position<small>Red outline; can’t be dropped there</small></span></div>
+        <div class="item"><svg viewBox="0 0 64 40"><rect x="8" y="12" width="48" height="16" fill="var(--select-soft)" stroke="var(--select)" stroke-width="2.5"/></svg><span>Selected<small>Highlighter stroke, any mode</small></span></div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="h-pr">
+      <h2 id="h-pr">Principles</h2>
+      <div class="principles">
+        <div class="panel"><div class="panel-body"><h3>Two workflows, two faces</h3><p class="muted">Facilities talks in templates, vertices and grid. Workplace talks in people and spaces. The Workplace map has no geometry tools at all.</p></div></div>
+        <div class="panel"><div class="panel-body"><h3>Scale is not Zoom</h3><p class="muted">Editing Scale sits next to Zoom with its own label and units, so nobody confuses snapping with magnification.</p></div></div>
+        <div class="panel"><div class="panel-body"><h3>Preview, then all or nothing</h3><p class="muted">Imports, batch labels and publishing show every effect first and apply together. Blocked actions say why and how to fix them.</p></div></div>
+        <div class="panel"><div class="panel-body"><h3>The canvas is never the only way</h3><p class="muted">Every map selection has an HTML panel and every space is reachable through search.</p></div></div>
+      </div>
+    </section>
+  </main>
+
+<script src="assets/dskt.js"></script>
+<script>
+  const SW = [
+    ["Paper", "--paper"], ["Surface", "--surface"], ["Ink", "--ink"], ["Line", "--line-strong"],
+    ["Graphite (actions)", "--accent"], ["Highlighter", "--select"], ["Non-photo blue", "--grid-major"], ["Pencil blue (upcoming)", "--info"], ["Valid", "--ok"], ["Warning", "--warn"], ["Error", "--crit"],
+    ["Desk", "--cat-desk"], ["Private office", "--cat-office"], ["Zone", "--cat-zone"], ["Plant", "--cat-plant"], ["Furniture", "--cat-furniture"], ["Obstacle", "--cat-obstacle"],
+  ];
+  function paint() {
+    const cs = getComputedStyle(document.documentElement);
+    document.getElementById("palette").innerHTML = SW.map(([n, v]) => `<div class="sw"><i style="background:var(${v})"></i><div><b>${n}</b><code>${v}, ${cs.getPropertyValue(v).trim()}</code></div></div>`).join("");
+  }
+  paint();
+  new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "dskt-activegraph": {
+      "serverUrl": "http://127.0.0.1:7788/mcp",
+      "headers": {
+        "Authorization": "Bearer replace-with-random-token"
+      }
+    }
+  }
+}

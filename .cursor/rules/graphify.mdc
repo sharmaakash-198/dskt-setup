@@ -1,0 +1,36 @@
+---
+description: Use Graphify for structural code navigation (calls, imports, class links)
+alwaysApply: true
+---
+
+# Graphify — structural code graph
+
+Graphify is for structural code facts only. Run it independently inside `dskt-frontend/` or `dskt-backend/` after those repositories contain code; each generated `graphify-out/` stays local and gitignored.
+
+`GLOSSARY.md` and accepted ADRs are authoritative. ActiveGraph is supplemental project memory for work logs, draft notes, and bugs.
+
+## When to use Graphify
+
+Use Graphify before broad codebase exploration of **symbols, callers, dependents, or package wiring**:
+
+- `graphify query "<question>"`
+- `graphify path "<A>" "<B>"`
+- `graphify explain "<concept>"`
+- Open `graphify-out/graph.html` for an interactive map
+
+## When not to use Graphify
+
+- Accepted decisions and architecture intent → `docs/adr/` and architecture documents
+- Canonical domain language → `GLOSSARY.md`
+- Work logs, draft notes, bugs → ActiveGraph (`memory_search` / `log_decision` / `log_work`)
+- Single-file edits you already have open → Read/patch directly
+- Documentation-only exploration in DSKT-setup → normal file search
+
+## Keep the graph fresh
+
+From the affected application repository after meaningful TypeScript changes:
+
+```bash
+graphify update .
+graphify cluster-only . --no-label   # optional: refresh graph.html
+```

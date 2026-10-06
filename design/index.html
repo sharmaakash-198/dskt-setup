@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DSKT Screen Atlas</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; margin-bottom: 36px; }
+  @media (max-width: 900px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+  .hero h1 { font-size: 36px; line-height: 1.08; }
+  .hero .lede { font-size: 15.5px; color: var(--ink-2); max-width: 56ch; margin-top: 12px; }
+  .hero-map { height: 300px; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--canvas); overflow: hidden; position: relative; }
+  .hero-map svg { width: 100%; height: 100%; display: block; }
+  .hero-map .cap { position: absolute; left: 12px; bottom: 10px; font: 400 11.5px var(--f-mono); color: var(--ink-3); background: var(--surface); padding: 3px 7px; border-radius: 3px; border: 1px solid var(--line); }
+  .journey { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--surface); overflow: hidden; }
+  @media (max-width: 900px) { .journey { grid-template-columns: minmax(0, 1fr); } }
+  .journey a { padding: 16px; border-right: 1px solid var(--line); text-decoration: none; color: var(--ink); display: flex; flex-direction: column; gap: 6px; }
+  .journey a:last-child { border-right: 0; }
+  .journey a:hover { background: var(--surface-2); }
+  @media (max-width: 900px) { .journey a { border-right: 0; border-bottom: 1px solid var(--line); } .journey a:last-child { border-bottom: 0; } }
+  .journey .step { font: 500 12px var(--f-mono); color: var(--ink-3); }
+  .journey .who { font-size: 12px; color: var(--ink-3); }
+  .journey b { font: 600 15px/1.25 var(--f-cond); }
+  .groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 36px; }
+  @media (max-width: 1000px) { .groups { grid-template-columns: minmax(0, 1fr); } }
+  .group h2 { font-size: 17px; display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+  .group > p { color: var(--ink-2); font-size: 13px; margin-bottom: 12px; }
+  .screen { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); }
+  .screen:last-child { border-bottom: 0; }
+  .screen:hover { background: var(--surface-2); }
+  .screen .ib { width: 36px; height: 36px; border-radius: var(--r-1); background: var(--surface-2); display: grid; place-items: center; color: var(--ink-2); }
+  .screen b { display: block; font-weight: 500; }
+  .screen small { display: block; color: var(--ink-3); font-size: 12px; }
+  .screen .mvp { font: 500 11px var(--f-mono); color: var(--ink-3); }
+  .foot { margin-top: 36px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Design</span>
+    </a>
+    <nav class="nav" aria-label="Design pages"><div class="nav-group"><a href="index.html" aria-current="page">Screens</a><a href="moodboard.html">Mood board</a></div></nav>
+    <div class="topbar-end"><button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button></div>
+  </header>
+
+  <main class="page">
+    <div class="hero">
+      <div>
+        <span class="eyebrow">Sheet 00, screen index</span>
+        <h1>DSKT screens for the Arrise MVP</h1>
+        <p class="lede">Clickable mockups of every MVP screen in <a href="../docs/product/MVP.md">docs/product/MVP.md</a>. All maps share one renderer and one sample floor (Noida, Tower B, Floor 3) stored as integer world coordinates of 10 cm. Every employee is synthetic.</p>
+        <div class="row" style="margin-top:18px"><a class="btn btn-primary" href="editor.html">Open the floor editor</a><a class="btn" href="moodboard.html">See the mood board</a></div>
+      </div>
+      <div class="hero-map"><svg id="hero" aria-label="Floor 3 published plan" role="img"></svg><span class="cap">FLOOR 3, r13, 48 × 30 m</span></div>
+    </div>
+
+    <h2 style="font-size:17px;margin-bottom:10px">The MVP journey</h2>
+    <div class="journey">
+      <a href="editor.html"><span class="step">1</span><b>Draw and publish the floor</b><span class="who">Facilities Admin</span></a>
+      <a href="import.html"><span class="step">2</span><b>Import employees from Excel</b><span class="who">Workplace Planner</span></a>
+      <a href="assign.html"><span class="step">3</span><b>Label desks in batches</b><span class="who">Workplace Planner</span></a>
+      <a href="assign.html"><span class="step">4</span><b>Assign people to spaces</b><span class="who">Workplace Planner</span></a>
+      <a href="people.html"><span class="step">5</span><b>Find where someone sits</b><span class="who">Viewer</span></a>
+    </div>
+
+    <div class="groups">
+      <section class="group">
+        <h2>Facilities</h2><p>Location structure, geometry, templates and revisions.</p>
+        <div class="panel">
+          <a class="screen" href="locations.html"><span class="ib"><svg class="ico"><use href="#i-building"/></svg></span><span><b>Sites, buildings and floors</b><small>Tree, floor cards with occupancy</small></span><span class="mvp">MVP 2</span></a>
+          <a class="screen" href="revisions.html"><span class="ib"><svg class="ico"><use href="#i-layers"/></svg></span><span><b>Floor plan revisions</b><small>Draft, Published, Archived; lease takeover</small></span><span class="mvp">MVP 3</span></a>
+          <a class="screen" href="editor.html"><span class="ib"><svg class="ico"><use href="#i-map"/></svg></span><span><b>Floor editor</b><small>Catalog, canvas, inspector, validation, publish</small></span><span class="mvp">MVP 4</span></a>
+          <a class="screen" href="templates.html"><span class="ib"><svg class="ico"><use href="#i-template"/></svg></span><span><b>Template library and editor</b><small>Orthogonal edge editing, revisions</small></span><span class="mvp">MVP 5</span></a>
+        </div>
+      </section>
+      <section class="group">
+        <h2>Workplace</h2><p>People data, labels and assignments on the published plan.</p>
+        <div class="panel">
+          <a class="screen" href="import.html"><span class="ib"><svg class="ico"><use href="#i-sheet"/></svg></span><span><b>Employee import</b><small>Preview, row errors, confirm, history</small></span><span class="mvp">MVP 6</span></a>
+          <a class="screen" href="assign.html"><span class="ib"><svg class="ico"><use href="#i-users"/></svg></span><span><b>Assignment map</b><small>Search, status, batch labels, assign</small></span><span class="mvp">MVP 7</span></a>
+        </div>
+      </section>
+      <section class="group">
+        <h2>Everyone</h2><p>Sign-in and the read-only directory.</p>
+        <div class="panel">
+          <a class="screen" href="signin.html"><span class="ib"><svg class="ico"><use href="#i-lock"/></svg></span><span><b>Sign in and access states</b><small>Microsoft Entra, no role, wrong tenant</small></span><span class="mvp">MVP 1</span></a>
+          <a class="screen" href="people.html"><span class="ib"><svg class="ico"><use href="#i-search"/></svg></span><span><b>Find people</b><small>Search, detail, locate on plan</small></span><span class="mvp">MVP 8</span></a>
+        </div>
+      </section>
+    </div>
+
+    <div class="foot">
+      <div class="callout info"><svg class="ico"><use href="#i-info"/></svg><div>Snapping, Editing Scale vs Zoom, quarter-turn rotation, overlap and boundary checks, undo, batch label collisions and overlapping-assignment blocks all work against the sample data. Saving, sign-in and downloads are simulated.</div></div>
+      <div class="callout"><svg class="ico"><use href="#i-grid"/></svg><div>In the editor, change Editing Scale and watch nothing move; drag a desk onto a pillar; press <kbd>R</kbd> on a selection; fix both validation issues, then publish.</div></div>
+    </div>
+  </main>
+
+<script src="assets/dskt.js"></script>
+<script>
+  const svg = DSKT.setupMap(document.getElementById("hero"));
+  const view = DSKT.MapView(svg, { panGate: () => true });
+  DSKT.renderFloor(svg, { mode: "workplace", placements: DSKT.PLACEMENTS, status: (p) => DSKT.spaceStatus(p) });
+  requestAnimationFrame(() => { view.fit(undefined, 12); DSKT.renderGrid(svg, view, 16); });
+</script>
+</body>
+</html>

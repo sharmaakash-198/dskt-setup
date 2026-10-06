@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arrise Locations</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .loc { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .loc { grid-template-columns: minmax(0, 1fr); } }
+  .tree { list-style: none; margin: 0; padding: 8px 0; font-size: 13.5px; }
+  .tree ul { list-style: none; margin: 0; padding: 0 0 0 16px; }
+  .tree a { display: flex; align-items: center; gap: 8px; padding: 6px 14px; color: var(--ink-2); text-decoration: none; border-radius: var(--r-1); }
+  .tree a:hover { background: var(--surface-2); color: var(--ink); }
+  .tree a[aria-current="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .tree .n { margin-left: auto; font: 400 11.5px var(--f-mono); color: var(--ink-3); }
+  .floors { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .floor { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-2); overflow: hidden; color: var(--ink); text-decoration: none; }
+  .floor:hover { border-color: var(--line-strong);  }
+  .floor .thumb { height: 150px; background: var(--canvas); border-bottom: 1px solid var(--line); }
+  .floor .thumb svg { width: 100%; height: 100%; display: block; }
+  .floor .body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .floor .title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .floor h3 { font-size: 17px; }
+  .bar { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; display: flex; }
+  .bar i { display: block; height: 100%; }
+  .floor .facts { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--ink-2); }
+  .empty-floor .thumb { display: grid; place-items: center; color: var(--ink-3); font-size: 13px; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><span class="nav-group-label">Facilities</span><a href="locations.html" aria-current="page">Locations</a><a href="revisions.html">Floor plans</a><a href="templates.html">Templates</a></div>
+      <div class="nav-group"><span class="nav-group-label">Workplace</span><a href="assign.html">Assignments</a><a href="import.html">Imports</a></div>
+      <div class="nav-group"><a href="people.html">People</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">MK</span><div class="user-meta"><b>Meera Kulkarni</b><span>Facilities Admin</span></div></div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="loc">
+      <nav class="panel" aria-label="Sites and buildings">
+        <div class="panel-head"><h3>Arrise</h3><span class="spacer"></span><button class="btn btn-sm btn-ghost" aria-label="Add site"><svg class="ico"><use href="#i-plus"/></svg></button></div>
+        <ul class="tree">
+          <li><a href="#"><svg class="ico"><use href="#i-pin"/></svg>Noida<span class="n">2</span></a>
+            <ul>
+              <li><a href="#"><svg class="ico"><use href="#i-building"/></svg>Tower A<span class="n">6</span></a></li>
+              <li><a href="#" aria-current="true"><svg class="ico"><use href="#i-building"/></svg>Tower B<span class="n">4</span></a></li>
+            </ul></li>
+          <li><a href="#"><svg class="ico"><use href="#i-pin"/></svg>Hyderabad<span class="n">1</span></a>
+            <ul><li><a href="#"><svg class="ico"><use href="#i-building"/></svg>Hitech City<span class="n">3</span></a></li></ul></li>
+          <li><a href="#"><svg class="ico"><use href="#i-pin"/></svg>Bengaluru<span class="n">1</span></a>
+            <ul><li><a href="#"><svg class="ico"><use href="#i-building"/></svg>Embassy Tech Village<span class="n">2</span></a></li></ul></li>
+        </ul>
+      </nav>
+
+      <section>
+        <div class="page-head">
+          <div>
+            <div class="crumbs"><a href="#">Arrise</a><span class="sep">/</span><a href="#">Noida</a><span class="sep">/</span><span>Tower B</span></div>
+            <h1>Tower B</h1>
+            <p class="lede">4 floors, 3 published, 412 assignable spaces</p>
+          </div>
+          <div class="row"><button class="btn"><svg class="ico"><use href="#i-dots"/></svg> Building settings</button><button class="btn btn-primary"><svg class="ico"><use href="#i-plus"/></svg> Add floor</button></div>
+        </div>
+        <div class="floors" id="floors"></div>
+      </section>
+    </div>
+  </main>
+
+<script src="assets/dskt.js"></script>
+<script>
+(function () {
+  const D = DSKT;
+  const floors = [
+    { n: "Floor 1", pub: "r6", draft: null, spaces: 96, occ: 81, fut: 4, href: "revisions.html" },
+    { n: "Floor 2", pub: "r9", draft: "r10, Diya Nair", spaces: 166, occ: 120, fut: 9, href: "revisions.html" },
+    { n: "Floor 3", pub: "r13", draft: "r14, you", spaces: 150, occ: 100, fut: 12, href: "revisions.html", live: true },
+    { n: "Floor 4", pub: null, draft: null, spaces: 0, occ: 0, fut: 0, href: "editor.html" },
+  ];
+  document.getElementById("floors").innerHTML = floors.map((f, i) => {
+    if (!f.pub) return `<a class="floor empty-floor" href="${f.href}"><div class="thumb"><span class="stack" style="align-items:center;gap:6px"><svg class="ico" style="width:22px;height:22px"><use href="#i-boundary"/></svg>No plan yet</span></div>
+      <div class="body"><div class="title"><h3>${f.n}</h3><span class="badge plain archived">Not started</span></div><p class="muted" style="font-size:13px">Start by drawing the Floor Boundary.</p><span class="btn btn-sm" style="align-self:flex-start">Create first draft</span></div></a>`;
+    const pct = (x) => (x / f.spaces) * 100;
+    return `<a class="floor" href="${f.href}">
+      <div class="thumb"><svg data-thumb="${i}" aria-hidden="true"></svg></div>
+      <div class="body">
+        <div class="title"><h3>${f.n}</h3><span class="badge published">Published ${f.pub}</span></div>
+        <div class="bar" role="img" aria-label="${f.occ} occupied, ${f.fut} starting soon, ${f.spaces - f.occ - f.fut} vacant"><i style="width:${pct(f.occ)}%;background:var(--ink-2)"></i><i style="width:${pct(f.fut)}%;background:var(--info)"></i></div>
+        <div class="facts"><span><b class="num">${f.occ}</b> occupied</span><span><b class="num">${f.fut}</b> soon</span><span><b class="num">${f.spaces - f.occ - f.fut}</b> vacant</span></div>
+        ${f.draft ? `<span class="badge draft" style="align-self:flex-start">Draft ${f.draft}</span>` : `<span class="subtle" style="font-size:12.5px">No open draft</span>`}
+      </div></a>`;
+  }).join("");
+  // Thumbnails use the same renderer as the editor and assignment map.
+  document.querySelectorAll("[data-thumb]").forEach((svg) => {
+    D.setupMap(svg);
+    svg.setAttribute("viewBox", "-10 -10 500 320");
+    svg.classList.add("lod-low");
+    D.renderFloor(svg, { mode: "workplace", placements: D.PLACEMENTS, status: (p) => D.spaceStatus(p) });
+  });
+})();
+</script>
+</body>
+</html>

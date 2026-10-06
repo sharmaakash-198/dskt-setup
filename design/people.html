@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Find People</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .finder { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .finder { grid-template-columns: minmax(0, 1fr); } }
+  .big-search .input { height: 46px; font-size: 16px; padding-left: 40px; }
+  .big-search .ico { left: 13px; width: 18px; height: 18px; }
+  .results { max-height: 640px; overflow: auto; }
+  .person { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 14px; width: 100%; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; cursor: pointer; color: var(--ink); }
+  .person:hover, .person[aria-selected="true"] { background: var(--surface-2); }
+  .person[aria-selected="true"] { }
+  .person .avatar { width: 34px; height: 34px; }
+  .person b { display: block; font-weight: 500; }
+  .person small { display: block; color: var(--ink-3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail-head { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 20px; border-bottom: 1px solid var(--line); }
+  .detail-head .avatar { width: 56px; height: 56px; font-size: 18px; }
+  @media (max-width: 600px) { .detail-head { grid-template-columns: 48px minmax(0, 1fr); } .detail-head .avatar { width: 48px; height: 48px; } .detail-head > :last-child { grid-column: 1 / -1; } }
+  .where { display: grid; grid-template-columns: minmax(0, 1fr) 260px; }
+  @media (max-width: 1100px) { .where { grid-template-columns: minmax(0, 1fr); } }
+  .mini { height: 360px; position: relative; background: var(--canvas); border-right: 1px solid var(--line); }
+  @media (max-width: 1100px) { .mini { border-right: 0; border-bottom: 1px solid var(--line); height: 300px; } }
+  .space-card { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-1); background: var(--surface); cursor: pointer; text-align: left; color: var(--ink); width: 100%; }
+  .space-card[aria-pressed="true"] { border-color: var(--select); box-shadow: 0 0 0 1px var(--select); }
+  .space-card b { font: 500 18px var(--f-mono); }
+  .role-switch { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-3); }
+  .pulse { fill: none; stroke: var(--select); stroke-width: 2; vector-effect: non-scaling-stroke; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><a href="people.html" aria-current="page">People</a><a href="locations.html">Floors</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">SN</span><div class="user-meta"><b>Sneha Nair</b><span id="role-name">Viewer</span></div></div>
+    </div>
+  </header>
+
+  <main class="page" style="max-width:1320px">
+    <div class="page-head">
+      <div>
+        <h1>Find someone</h1>
+        <p class="lede">Search by name, employee ID or team to see where someone sits.</p>
+      </div>
+      <div class="role-switch"><span>Preview as</span>
+        <div class="seg" role="group" aria-label="Preview role" id="role">
+          <button data-r="viewer" aria-pressed="true">Viewer</button><button data-r="planner" aria-pressed="false">Workplace Planner</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="finder">
+      <section class="panel" aria-label="Search">
+        <div class="panel-body" style="padding-bottom:12px">
+          <div class="search big-search"><svg class="ico"><use href="#i-search"/></svg><input class="input" id="q" type="search" placeholder="Name, ID or team" aria-label="Search people" autocomplete="off" value="Iyer"></div>
+          <p class="hint" id="count" style="margin-top:8px" aria-live="polite"></p>
+        </div>
+        <div class="results" id="results" role="listbox" aria-label="People"></div>
+      </section>
+
+      <section class="panel" id="detail" aria-live="polite"></section>
+    </div>
+  </main>
+
+<script src="assets/dskt.js"></script>
+<script>
+(function () {
+  const D = DSKT, T = D.TEMPLATES;
+  const $ = (id) => document.getElementById(id);
+  let role = "viewer", current = null, focusSpace = null, view = null;
+  const fmt = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const spacesOf = (id) => D.ASSIGNMENTS.filter((a) => a.emp === id).map((a) => ({ a, p: D.PLACEMENTS.find((p) => p.id === a.pid) }));
+  // Viewers see active people only; inactive records need elevated permission.
+  const visible = () => D.PEOPLE.filter((e) => role === "planner" || e.status === "Active");
+
+  function renderResults() {
+    const q = $("q").value.trim().toLowerCase();
+    const list = visible().filter((e) => !q || e.name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q) || e.teamName.toLowerCase().includes(q));
+    $("count").textContent = q ? `${list.length} ${list.length === 1 ? "person" : "people"} match “${$("q").value.trim()}”` : `${list.length} people`;
+    $("results").innerHTML = list.slice(0, 80).map((e) => {
+      const sp = spacesOf(e.id).filter((x) => x.a.state === "current");
+      return `<button class="person" role="option" data-id="${e.id}" aria-selected="${current === e.id}"><span class="avatar">${D.initials(e.name)}</span><span style="min-width:0"><b>${D.esc(e.name)}</b><small>${e.title}, ${e.teamName}</small></span><span class="mono subtle" style="font-size:12px">${sp.map((x) => x.p.label).join(", ") || "No space"}</span></button>`;
+    }).join("") || `<div class="panel-body"><p class="muted">No one matches “${D.esc($("q").value)}”. Try a surname, an employee ID like <span class="mono">ARR-10241</span>, or a team.</p></div>`;
+  }
+  $("q").addEventListener("input", renderResults);
+  $("results").addEventListener("click", (e) => { const b = e.target.closest(".person"); if (b) { current = b.dataset.id; focusSpace = null; renderResults(); renderDetail(); } });
+  $("role").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-r]"); if (!b) return;
+    role = b.dataset.r;
+    document.querySelectorAll("#role button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    $("role-name").textContent = role === "viewer" ? "Viewer" : "Workplace Planner";
+    if (role === "viewer" && current && D.PEOPLE_BY_ID[current].status !== "Active") current = null;
+    renderResults(); renderDetail();
+  });
+
+  function renderDetail() {
+    const el = $("detail");
+    if (!current) { el.innerHTML = `<div class="panel-body" style="padding:48px 24px;text-align:center"><svg class="ico" style="width:28px;height:28px;color:var(--ink-3)"><use href="#i-user"/></svg><h2 style="margin-top:10px">Pick a person</h2><p class="muted" style="margin-top:6px">Their spaces appear here on the floor plan.</p></div>`; return; }
+    const e = D.PEOPLE_BY_ID[current];
+    const sp = spacesOf(e.id).filter((x) => role === "planner" || x.a.state === "current");
+    if (!focusSpace && sp.length) focusSpace = sp[0].p.id;
+    const mgr = e.manager ? D.PEOPLE_BY_ID[e.manager] : null;
+    const f = sp.find((x) => x.p.id === focusSpace);
+    el.innerHTML = `
+      <div class="detail-head">
+        <span class="avatar">${D.initials(e.name)}</span>
+        <div style="min-width:0"><h2 style="font-size:22px">${D.esc(e.name)}</h2><div class="muted">${e.title}, ${e.teamName}</div></div>
+        <div class="row">${e.status === "Active" ? "" : '<span class="badge warn">Inactive</span>'}<button class="btn btn-sm" id="copy-email"><svg class="ico"><use href="#i-copy"/></svg> Copy email</button></div>
+      </div>
+      ${sp.length ? `<div class="where">
+        <div class="mini"><svg class="map" id="mini" role="img" aria-label="${f ? `Floor 3 plan with ${f.p.label} highlighted` : "Floor 3 plan"}"></svg></div>
+        <div class="panel-body stack">
+          <h3 class="eyebrow">Sits at</h3>
+          ${sp.map((x) => `<button class="space-card" data-space="${x.p.id}" aria-pressed="${x.p.id === focusSpace}"><b>${x.p.label}</b><span class="muted" style="font-size:12.5px">${T[x.p.tpl].category}, Noida, Tower B, Floor 3</span>${x.a.state === "future" ? `<span class="badge draft" style="align-self:flex-start">From ${fmt(x.a.start)}</span>` : ""}</button>`).join("")}
+          <p class="hint">Use the zoom buttons or scroll on the plan to look around.</p>
+        </div></div>`
+      : `<div class="panel-body"><div class="callout info"><svg class="ico"><use href="#i-info"/></svg><div>${D.esc(e.name.split(" ")[0])} doesn’t have an assigned space yet.</div></div></div>`}
+      <div class="panel-body" style="border-top:1px solid var(--line)">
+        <dl class="kv">
+          <dt>Employee ID</dt><dd class="mono">${e.id}</dd>
+          <dt>Email</dt><dd><span class="mono" id="email" style="font-size:12.5px">${e.email}</span></dd>
+          <dt>Team</dt><dd>${e.teamName}</dd>
+          <dt>Department</dt><dd>${e.dept}</dd>
+          <dt>Site</dt><dd>${e.site}</dd>
+          ${role === "planner" ? `<dt>Manager</dt><dd>${mgr ? D.esc(mgr.name) : "None"}</dd><dt>History</dt><dd>${sp.map((x) => `${x.p.label} since ${fmt(x.a.start)}`).join("<br>")}${sp.length ? "<br>" : ""}<span class="subtle">D-112, Floor 2, 4 Jan 2024 to ${sp[0] ? fmt(sp[0].a.start) : "None"}</span></dd>` : ""}
+        </dl>
+        ${role === "viewer" ? `<p class="hint" style="margin-top:12px">Manager and assignment history are visible to Workplace Planners only.</p>` : ""}
+      </div>`;
+    $("copy-email").onclick = () => {
+      navigator.clipboard.writeText(e.email).then(() => D.toast("Email copied"), () => { const r = document.createRange(); r.selectNodeContents($("email")); getSelection().removeAllRanges(); getSelection().addRange(r); D.toast("Press ⌘C to copy the selected email"); });
+    };
+    el.querySelectorAll("[data-space]").forEach((b) => (b.onclick = () => { focusSpace = b.dataset.space; renderDetail(); }));
+    if (sp.length) drawMini(sp.map((x) => x.p.id));
+  }
+
+  function drawMini(ids) {
+    const svg = D.setupMap($("mini"));
+    view = D.MapView(svg, { panGate: () => true });
+    D.renderFloor(svg, { mode: "workplace", placements: D.PLACEMENTS, selected: new Set([focusSpace]), highlight: new Set(ids), status: (p) => D.spaceStatus(p) });
+    const p = D.PLACEMENTS.find((q) => q.id === focusSpace);
+    const b = D.bbox(D.worldPoly(p));
+    svg.querySelector(".layer-preview").innerHTML = `<circle class="pulse" cx="${b.cx}" cy="${b.cy}" r="${Math.max(b.w, b.h) * 1.1}"/>`;
+    requestAnimationFrame(() => view.fit({ minX: b.cx - 70, maxX: b.cx + 70, minY: b.cy - 45, maxY: b.cy + 45 }, 0));
+  }
+
+  renderResults();
+  const first = visible().find((e) => e.name.includes("Iyer") && spacesOf(e.id).length);
+  current = first ? first.id : null;
+  renderResults(); renderDetail();
+})();
+</script>
+</body>
+</html>

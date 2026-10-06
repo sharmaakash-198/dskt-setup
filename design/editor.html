@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floor 3 Editor</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .editor-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .editor-bar .title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .editor-bar .title .crumbs { margin: 0; }
+  .editor-bar h1 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .meta-line { display: flex; gap: 14px; align-items: center; font-size: 12.5px; color: var(--ink-2); flex-wrap: wrap; }
+  .meta-line span { display: inline-flex; align-items: center; gap: 5px; }
+  .save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .save-dot.saving { background: var(--warn); }
+
+  .workspace { grid-template-columns: 256px minmax(0, 1fr) 312px; }
+
+  /* catalog */
+  .cat-group { padding: 6px 0 10px; }
+  .cat-group h3 { padding: 6px 16px; }
+  .cat-item {
+    display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center;
+    width: 100%; padding: 7px 16px; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink);
+  }
+  .cat-item:hover { background: var(--surface-2); }
+  .cat-item[aria-pressed="true"] { background: var(--accent-soft); }
+  .cat-thumb { width: 40px; height: 40px; display: grid; place-items: center; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--r-1); }
+  .cat-item b { display: block; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cat-item small { display: block; font-size: 11.5px; color: var(--ink-3); }
+
+  /* canvas chrome */
+  .toolbar { top: 12px; left: 12px; display: flex; flex-direction: column; padding: 4px; gap: 2px; }
+  .tool { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: none; border-radius: var(--r-1); color: var(--ink-2); cursor: pointer; }
+  .tool:hover { background: var(--surface-2); color: var(--ink); }
+  .tool[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .tool-sep { height: 1px; background: var(--line); margin: 3px 4px; }
+  .scalebox { top: 12px; right: 12px; display: flex; align-items: center; gap: 0; }
+  .scalebox > div { padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; }
+  .scalebox > div + div { border-left: 1px solid var(--line); }
+  .scalebox select { height: 28px; font: 500 12.5px var(--f-mono); border: 1px solid var(--line-strong); border-radius: var(--r-1); background: var(--surface); color: var(--ink); padding: 0 6px; }
+  .zoomctl { display: flex; align-items: center; gap: 2px; }
+  .zoomctl output { font: 500 12.5px var(--f-mono); min-width: 46px; text-align: center; }
+  .armed-hint { bottom: 14px; left: 50%; transform: translateX(-50%); padding: 8px 12px; font-size: 12.5px; display: flex; gap: 10px; align-items: center; white-space: nowrap; }
+  .readonly-banner { top: 12px; left: 50%; transform: translateX(-50%); padding: 8px 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; background: var(--surface-2); border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
+
+  /* inspector */
+  .insp-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .insp-head h2 { font-family: var(--f-mono); font-weight: 500; font-size: 17px; }
+  .coord { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .coord .box { border: 1px solid var(--line); border-radius: var(--r-1); padding: 7px 9px; }
+  .coord .box b { display: block; font: 500 14px var(--f-mono); }
+  .coord .box small { font-size: 11px; color: var(--ink-3); font-family: var(--f-mono); }
+  .note { font-size: 12px; color: var(--ink-3); display: flex; gap: 6px; }
+  .note .ico { width: 14px; height: 14px; margin-top: 2px; }
+  .issue {
+    display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line);
+    background: none; border-left: 0; border-right: 0; border-top: 0; width: 100%; text-align: left; cursor: pointer; color: var(--ink); font-size: 13px;
+  }
+  .issue:hover { background: var(--surface-2); }
+  .issue .ico { margin-top: 2px; }
+  .issue.crit .ico { color: var(--crit); }
+  .issue.warn .ico { color: var(--warn); }
+  .issue code { font-size: 11px; color: var(--ink-3); }
+  .vert-list { font: 400 12px/1.7 var(--f-mono); color: var(--ink-2); columns: 2; margin: 0; padding-left: 22px; }
+  .kshort { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 10px; font-size: 12.5px; color: var(--ink-2); align-items: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><span class="nav-group-label">Facilities</span><a href="locations.html">Locations</a><a href="revisions.html" aria-current="page">Floor plans</a><a href="templates.html">Templates</a></div>
+      <div class="nav-group"><span class="nav-group-label">Workplace</span><a href="assign.html">Assignments</a><a href="import.html">Imports</a></div>
+      <div class="nav-group"><a href="people.html">People</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">MK</span><div class="user-meta"><b>Meera Kulkarni</b><span>Facilities Admin</span></div></div>
+    </div>
+  </header>
+
+  <div class="editor-bar desktop-only">
+    <div class="title">
+      <div class="crumbs"><a href="locations.html">Noida</a><span class="sep">/</span><a href="locations.html">Tower B</a><span class="sep">/</span><a href="revisions.html">Floor 3</a></div>
+      <h1>Floor 3 <span class="badge draft" id="rev-badge">Draft r14</span></h1>
+    </div>
+    <div class="meta-line">
+      <span title="Only one person can edit a Draft at a time"><svg class="ico"><use href="#i-lock"/></svg> You hold the editor lease</span>
+      <span id="save-state" aria-live="polite"><i class="save-dot"></i> Saved</span>
+      <span>Copied from <a href="revisions.html">Published r13</a></span>
+    </div>
+    <div class="spacer"></div>
+    <div class="row">
+      <button class="btn btn-icon btn-ghost" id="undo" aria-label="Undo (Ctrl+Z)" title="Undo  ⌘Z"><svg class="ico"><use href="#i-undo"/></svg></button>
+      <button class="btn btn-icon btn-ghost" id="redo" aria-label="Redo (Shift+Ctrl+Z)" title="Redo  ⇧⌘Z"><svg class="ico"><use href="#i-redo"/></svg></button>
+      <button class="btn" id="validate"><svg class="ico"><use href="#i-check"/></svg> Validate</button>
+      <button class="btn btn-primary" id="publish"><svg class="ico"><use href="#i-publish"/></svg> Publish r14</button>
+    </div>
+  </div>
+
+  <div class="workspace desktop-only">
+    <!-- Template catalog -->
+    <aside class="side" aria-label="Template catalog">
+      <div class="side-section">
+        <div class="search"><svg class="ico"><use href="#i-search"/></svg><input class="input" id="cat-search" type="search" placeholder="Search templates" aria-label="Search templates"></div>
+      </div>
+      <div class="side-scroll" id="catalog"></div>
+      <div class="side-section" style="border-top:1px solid var(--line);border-bottom:0">
+        <a class="btn btn-sm" href="templates.html" style="width:100%"><svg class="ico"><use href="#i-template"/></svg> Open template library</a>
+      </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main class="canvas-wrap" aria-label="Floor plan canvas. Selected elements are described in the inspector panel.">
+      <svg class="map" id="map" role="img" aria-label="Floor 3 plan"></svg>
+
+      <div class="floating toolbar" role="toolbar" aria-label="Tools">
+        <button class="tool" data-tool="select" aria-pressed="true" title="Select  V" aria-label="Select tool (V)"><svg class="ico"><use href="#i-cursor"/></svg></button>
+        <button class="tool" data-tool="pan" aria-pressed="false" title="Pan  H or hold Space" aria-label="Pan tool (H)"><svg class="ico"><use href="#i-hand"/></svg></button>
+        <button class="tool" data-tool="boundary" aria-pressed="false" title="Edit Floor Boundary  B" aria-label="Edit Floor Boundary (B)"><svg class="ico"><use href="#i-boundary"/></svg></button>
+        <div class="tool-sep"></div>
+        <button class="tool" id="rotate" title="Rotate 90°  R" aria-label="Rotate selection 90 degrees (R)"><svg class="ico"><use href="#i-rotate"/></svg></button>
+        <button class="tool" id="delete" title="Remove  Delete" aria-label="Remove selection (Delete)"><svg class="ico"><use href="#i-trash"/></svg></button>
+      </div>
+
+      <div class="floating scalebox">
+        <div>
+          <label class="eyebrow" for="scale">Editing Scale</label>
+          <select id="scale" title="Grid interval used for snapping. Changing it never moves or resizes anything."></select>
+        </div>
+        <div>
+          <span class="eyebrow">Zoom</span>
+          <div class="zoomctl">
+            <button class="btn btn-ghost btn-icon btn-sm" id="zoom-out" aria-label="Zoom out (−)"><svg class="ico"><use href="#i-zoomOut"/></svg></button>
+            <output id="zoom-val">100%</output>
+            <button class="btn btn-ghost btn-icon btn-sm" id="zoom-in" aria-label="Zoom in (+)"><svg class="ico"><use href="#i-zoomIn"/></svg></button>
+            <button class="btn btn-ghost btn-icon btn-sm" id="zoom-fit" aria-label="Fit floor (0)"><svg class="ico"><use href="#i-fit"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating armed-hint" id="armed-hint" hidden>
+        <span id="armed-text">Placing</span><span class="subtle">Click to place, <kbd>R</kbd> rotate, <kbd>Esc</kbd> cancel</span>
+      </div>
+      <div class="floating readonly-banner" id="readonly-banner" hidden>
+        <svg class="ico" style="color:var(--ok)"><use href="#i-check"/></svg>
+        <span>r14 is Published. It is read-only now. Editing creates Draft r15.</span>
+      </div>
+    </main>
+
+    <!-- Inspector -->
+    <aside class="side right" aria-label="Inspector">
+      <div class="tabs" role="tablist" style="padding-inline:8px">
+        <button role="tab" id="tab-props" aria-selected="true" aria-controls="panel-props">Properties</button>
+        <button role="tab" id="tab-issues" aria-selected="false" aria-controls="panel-issues">Validation <span class="count crit" id="issue-count">0</span></button>
+      </div>
+      <div class="side-scroll" id="panel-props" role="tabpanel" aria-labelledby="tab-props"></div>
+      <div class="side-scroll" id="panel-issues" role="tabpanel" aria-labelledby="tab-issues" hidden></div>
+    </aside>
+  </div>
+
+  <footer class="statusbar desktop-only" aria-label="Editor status">
+    <span>World <b id="st-world">off plan</b></span>
+    <span>Grid <b id="st-grid">off plan</b></span>
+    <span>Scale <b id="st-scale">16</b>, 1 cell = <b id="st-cell">1.6 m</b></span>
+    <span id="st-thin" hidden>grid thinned for this Zoom</span>
+    <span class="spacer"></span>
+    <span><b id="st-count">0</b> elements</span>
+    <span><b id="st-sel">0</b> selected</span>
+  </footer>
+
+  <div class="desktop-only-msg">
+    <div class="stack" style="max-width:420px;text-align:center;align-items:center">
+      <svg class="ico" style="width:28px;height:28px;color:var(--ink-3)"><use href="#i-map"/></svg>
+      <h2>Floor editing needs a larger screen</h2>
+      <p class="muted">The Facilities editor is built for desktop and large laptop screens. Open Floor 3 on a computer to edit it. You can still <a href="people.html">find people</a> and view published floors here.</p>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="publish-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pub-title">
+    <div class="dialog-head"><h2 id="pub-title">Publish Floor 3 r14</h2></div>
+    <div class="dialog-body" id="pub-body"></div>
+    <div class="dialog-foot">
+      <button class="btn" id="pub-cancel">Cancel</button>
+      <button class="btn btn-primary" id="pub-confirm">Publish</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/dskt.js"></script>
+<script>
+(function () {
+  const D = DSKT, T = D.TEMPLATES;
+  const svg = D.setupMap(document.getElementById("map"));
+  const $ = (id) => document.getElementById(id);
+
+  // Draft r14 = published r13 + one new desk that overlaps a pillar, minus B-044 (which is assigned).
+  let placements = D.PLACEMENTS.map((p) => ({ ...p })).filter((p) => p.label !== "B-044");
+  const removedAssigned = [{ label: "B-044", who: assignedTo("B-044") }];
+  placements.push({ id: "pl_new1", tpl: "desk", x: 214, y: 60, rot: 0, label: "" });
+  function assignedTo(label) {
+    const p = D.PLACEMENTS.find((q) => q.label === label);
+    const s = p && D.spaceStatus(p);
+    return s && s.emp ? s.emp.name : "an employee";
+  }
+
+  let scale = 16, tool = "select", selected = new Set(), armed = null, armedRot = 0, ghost = null;
+  let published = false, issues = [], invalid = new Set();
+  const undoStack = [], redoStack = [];
+  const byId = (id) => placements.find((p) => p.id === id);
+  const snap = (v) => Math.round(v / scale) * scale;
+  const m = (u) => (u / 10).toLocaleString(undefined, { maximumFractionDigits: 1 }) + " m";
+
+  /* ---------- validation (advisory; the backend repeats it authoritatively) ---------- */
+  function validate(list = placements) {
+    const found = [], bad = new Set();
+    const solid = list.filter((p) => T[p.tpl].cls !== "zone").map((p) => ({ p, b: D.bbox(D.worldPoly(p)) }));
+    for (const p of list) {
+      const b = D.bbox(D.worldPoly(p));
+      if (!D.insideBoundary(b)) { bad.add(p.id); found.push({ sev: "crit", code: "PLACEMENT_OUTSIDE_BOUNDARY", ids: [p.id], msg: `${name(p)} extends outside the Floor Boundary.` }); }
+    }
+    for (let i = 0; i < solid.length; i++)
+      for (let j = i + 1; j < solid.length; j++)
+        if (D.overlaps(solid[i].b, solid[j].b)) {
+          bad.add(solid[i].p.id); bad.add(solid[j].p.id);
+          found.push({ sev: "crit", code: "PLACEMENT_OVERLAP", ids: [solid[i].p.id, solid[j].p.id], msg: `${name(solid[i].p)} overlaps ${name(solid[j].p)}. Touching edges is fine; overlapping is not.` });
+        }
+    return { found, bad };
+  }
+  function name(p) { return p.label ? `${p.label} (${T[p.tpl].category})` : T[p.tpl].name; }
+  function revalidate() {
+    const r = validate();
+    invalid = r.bad;
+    issues = r.found.concat(removedAssigned.map((x) => ({ sev: "warn", code: "ASSIGNED_PLACEMENT_REMOVED", ids: [], msg: `${x.label} was removed but is assigned to ${x.who}. A Workplace Planner must end or move that assignment before you can publish.`, blocking: true })));
+    const blocking = issues.filter((i) => i.sev === "crit" || i.blocking).length;
+    $("issue-count").textContent = issues.length;
+    $("issue-count").className = "count " + (blocking ? "crit" : "");
+  }
+
+  /* ---------- rendering ---------- */
+  const view = D.MapView(svg, {
+    onChange: () => { drawGrid(); $("zoom-val").textContent = view.zoomPercent() + "%"; },
+    panGate: (e) => tool === "pan" || spaceDown,
+  });
+  function drawGrid() {
+    const thin = D.renderGrid(svg, view, scale);
+    $("st-thin").hidden = thin === 1;
+  }
+  function draw() {
+    const shown = ghost && ghost.moving ? placements.map((p) => ghost.moving[p.id] ? { ...p, ...ghost.moving[p.id] } : p) : placements;
+    const bad = ghost && ghost.moving ? validate(shown).bad : invalid;
+    D.renderFloor(svg, { mode: "facilities", placements: shown, selected, invalid: bad });
+    const pv = svg.querySelector(".layer-preview");
+    pv.innerHTML = "";
+    if (ghost && ghost.place) {
+      const poly = D.worldPoly(ghost.place);
+      pv.innerHTML = `<polygon class="${ghost.ok ? "ghost" : "invalid"}" points="${poly.map((v) => v.join(",")).join(" ")}"/>`;
+    }
+    if (ghost && ghost.marquee) {
+      const q = ghost.marquee;
+      pv.innerHTML = `<rect class="marquee" x="${Math.min(q.x0, q.x1)}" y="${Math.min(q.y0, q.y1)}" width="${Math.abs(q.x1 - q.x0)}" height="${Math.abs(q.y1 - q.y0)}"/>`;
+    }
+    $("st-count").textContent = placements.length;
+    $("st-sel").textContent = selected.size;
+  }
+  function refresh() { revalidate(); draw(); renderInspector(); renderIssues(); }
+
+  /* ---------- history & autosave ---------- */
+  function commit(next, label) {
+    undoStack.push(placements); redoStack.length = 0;
+    placements = next;
+    autosave(label);
+    refresh();
+  }
+  function autosave() {
+    const el = $("save-state");
+    el.innerHTML = '<i class="save-dot saving"></i> Saving…';
+    clearTimeout(autosave.t);
+    autosave.t = setTimeout(() => (el.innerHTML = '<i class="save-dot"></i> Saved just now'), 700);
+  }
+  function undo() { if (!undoStack.length || published) return; redoStack.push(placements); placements = undoStack.pop(); selected = new Set([...selected].filter(byId)); autosave(); refresh(); }
+  function redo() { if (!redoStack.length || published) return; undoStack.push(placements); placements = redoStack.pop(); autosave(); refresh(); }
+
+  /* ---------- catalog ---------- */
+  function renderCatalog(q = "") {
+    const groups = { physical: "Physical elements", zone: "Zones", obstacle: "Obstacles" };
+    let html = "";
+    for (const [cls, title] of Object.entries(groups)) {
+      const items = Object.entries(T).filter(([, t]) => t.cls === cls && (t.name + t.category).toLowerCase().includes(q.toLowerCase()));
+      if (!items.length) continue;
+      html += `<div class="cat-group"><h3 class="eyebrow">${title}</h3>`;
+      for (const [k, t] of items)
+        html += `<button class="cat-item" data-tpl="${k}" aria-pressed="${armed === k}"><span class="cat-thumb">${D.templateThumb(k, 32)}</span><span><b>${t.name}</b><small>${t.category}, r${t.rev}${t.assignable ? ", assignable" : ""}</small></span></button>`;
+      html += `</div>`;
+    }
+    $("catalog").innerHTML = html || `<p class="subtle" style="padding:16px">No templates match “${D.esc(q)}”.</p>`;
+  }
+  $("cat-search").addEventListener("input", (e) => renderCatalog(e.target.value));
+  $("catalog").addEventListener("click", (e) => {
+    const b = e.target.closest(".cat-item"); if (!b || published) return;
+    armed = armed === b.dataset.tpl ? null : b.dataset.tpl; armedRot = 0;
+    $("armed-hint").hidden = !armed;
+    if (armed) $("armed-text").innerHTML = `Placing <b>${T[armed].name}</b>`;
+    renderCatalog($("cat-search").value);
+  });
+
+  /* ---------- pointer interaction ---------- */
+  let drag = null, spaceDown = false;
+  svg.addEventListener("pointermove", (e) => {
+    const w = view.toWorld(e);
+    const wx = Math.round(w.x), wy = Math.round(w.y);
+    $("st-world").textContent = `${wx}, ${wy}`;
+    const gx = wx / scale, gy = wy / scale;
+    $("st-grid").textContent = `${+gx.toFixed(2)}, ${+gy.toFixed(2)}`;
+    if (view.panning) return;
+    if (armed) {
+      const t = D.translationFor(armed, snap(w.x), snap(w.y), armedRot);
+      const cand = { id: "ghost", tpl: armed, x: t.x, y: t.y, rot: armedRot };
+      ghost = { place: cand, ok: !validate(placements.concat(cand)).bad.has("ghost") };
+      draw();
+      return;
+    }
+    if (!drag) return;
+    if (drag.kind === "move") {
+      const dx = snap(w.x - drag.x0), dy = snap(w.y - drag.y0);
+      const moving = {};
+      for (const id of selected) { const p = byId(id); moving[id] = { x: p.x + dx, y: p.y + dy }; }
+      drag.dx = dx; drag.dy = dy;
+      ghost = { moving };
+      draw();
+    } else if (drag.kind === "marquee") {
+      ghost = { marquee: { x0: drag.x0, y0: drag.y0, x1: w.x, y1: w.y } };
+      draw();
+    }
+  });
+  svg.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || tool === "pan" || spaceDown) return;
+    const w = view.toWorld(e);
+    if (armed) {
+      if (ghost && ghost.place && ghost.ok) {
+        const np = { ...ghost.place, id: "pl_n" + Date.now().toString(36), label: "" };
+        selected = new Set([np.id]);
+        commit(placements.concat(np));
+        D.toast(`Placed ${T[armed].name}`);
+      } else D.toast("That position overlaps another element or leaves the boundary.", "crit");
+      armed = null; ghost = null; $("armed-hint").hidden = true; renderCatalog($("cat-search").value); draw();
+      return;
+    }
+    if (published) { const hit = e.target.closest(".hit"); selected = hit ? new Set([hit.dataset.id]) : new Set(); draw(); renderInspector(); return; }
+    const hit = e.target.closest(".hit");
+    if (hit) {
+      const id = hit.dataset.id;
+      if (e.shiftKey) { selected.has(id) ? selected.delete(id) : selected.add(id); }
+      else if (!selected.has(id)) selected = new Set([id]);
+      drag = { kind: "move", x0: w.x, y0: w.y, dx: 0, dy: 0 };
+    } else {
+      if (!e.shiftKey) selected = new Set();
+      drag = { kind: "marquee", x0: w.x, y0: w.y };
+    }
+    svg.setPointerCapture(e.pointerId);
+    draw(); renderInspector();
+  });
+  svg.addEventListener("pointerup", (e) => {
+    if (!drag) return;
+    if (drag.kind === "move" && (drag.dx || drag.dy)) {
+      const next = placements.map((p) => selected.has(p.id) ? { ...p, x: p.x + drag.dx, y: p.y + drag.dy } : p);
+      const bad = validate(next).bad;
+      const newlyBad = [...selected].filter((id) => bad.has(id) && !invalid.has(id));
+      if (newlyBad.length) D.toast("Not moved: the new position overlaps another element or leaves the boundary.", "crit");
+      else commit(next);
+    } else if (drag.kind === "marquee" && ghost && ghost.marquee) {
+      const q = ghost.marquee;
+      const box = { minX: Math.min(q.x0, q.x1), maxX: Math.max(q.x0, q.x1), minY: Math.min(q.y0, q.y1), maxY: Math.max(q.y0, q.y1) };
+      if (box.maxX - box.minX > 2)
+        placements.forEach((p) => {
+          if (T[p.tpl].cls === "zone") return;
+          const b = D.bbox(D.worldPoly(p));
+          if (b.minX >= box.minX && b.maxX <= box.maxX && b.minY >= box.minY && b.maxY <= box.maxY) selected.add(p.id);
+        });
+    }
+    drag = null; ghost = null;
+    draw(); renderInspector();
+  });
+
+  /* ---------- commands ---------- */
+  function rotateSelection(to) {
+    if (published || !selected.size) return;
+    const next = placements.map((p) => {
+      if (!selected.has(p.id)) return p;
+      const rot = to != null ? to : (p.rot + 90) % 360;
+      const b = D.bbox(D.worldPoly(p));
+      const nb = D.bbox(T[p.tpl].poly.map((v) => D.rotatePoint(v, rot)));
+      const t = D.translationFor(p.tpl, Math.round(b.cx - nb.w / 2), Math.round(b.cy - nb.h / 2), rot);
+      return { ...p, rot, x: t.x, y: t.y };
+    });
+    const bad = validate(next).bad;
+    if ([...selected].some((id) => bad.has(id) && !invalid.has(id))) return D.toast("Not rotated: the turned element would overlap another element.", "crit");
+    commit(next);
+  }
+  function deleteSelection() {
+    if (published || !selected.size) return;
+    const gone = placements.filter((p) => selected.has(p.id));
+    for (const p of gone) {
+      const orig = D.PLACEMENTS.find((q) => q.id === p.id);
+      const s = orig && T[p.tpl].assignable ? D.spaceStatus(orig) : null;
+      if (s && s.emp) removedAssigned.push({ label: p.label, who: s.emp.name });
+    }
+    selected = new Set();
+    commit(placements.filter((p) => !gone.includes(p)));
+    D.toast(`Removed ${gone.length} element${gone.length > 1 ? "s" : ""}`);
+  }
+  function nudge(dx, dy) {
+    if (published || !selected.size) return;
+    const next = placements.map((p) => selected.has(p.id) ? { ...p, x: p.x + dx, y: p.y + dy } : p);
+    const bad = validate(next).bad;
+    if ([...selected].some((id) => bad.has(id) && !invalid.has(id))) return D.toast("Blocked: that would overlap or leave the boundary.", "crit");
+    commit(next);
+  }
+  $("rotate").onclick = () => rotateSelection();
+  $("delete").onclick = deleteSelection;
+  $("undo").onclick = undo; $("redo").onclick = redo;
+
+  /* ---------- tools, scale, zoom ---------- */
+  function setTool(t) {
+    if (t === "boundary") { D.toast("Boundary editing: drag an edge to move it in or out. Not wired in this mockup."); return; }
+    tool = t;
+    document.querySelectorAll("[data-tool]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.tool === t));
+    svg.style.cursor = t === "pan" ? "grab" : "";
+  }
+  document.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
+  const sel = $("scale");
+  for (let n = 0; n <= 8; n++) {
+    const f = 2 ** n;
+    sel.insertAdjacentHTML("beforeend", `<option value="${f}" ${f === 16 ? "selected" : ""}>${f} (${m(f)})</option>`);
+  }
+  sel.onchange = () => {
+    scale = +sel.value;
+    $("st-scale").textContent = scale; $("st-cell").textContent = m(scale);
+    drawGrid(); renderInspector();
+    D.toast(`Editing Scale ${scale}: grid is ${m(scale)}. Nothing moved or resized.`);
+  };
+  $("zoom-in").onclick = () => view.zoomBy(0.8);
+  $("zoom-out").onclick = () => view.zoomBy(1.25);
+  $("zoom-fit").onclick = () => view.fit();
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input, select, textarea")) return;
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (e.key === " ") { spaceDown = true; svg.style.cursor = "grab"; e.preventDefault(); return; }
+    const step = e.shiftKey ? scale * 8 : scale;
+    switch (e.key) {
+      case "v": case "V": setTool("select"); break;
+      case "h": case "H": setTool("pan"); break;
+      case "b": case "B": setTool("boundary"); break;
+      case "r": case "R": if (armed) { armedRot = (armedRot + 90) % 360; D.toast(`Rotation ${armedRot}°`); } else rotateSelection(); break;
+      case "Delete": case "Backspace": deleteSelection(); break;
+      case "Escape": armed = null; ghost = null; $("armed-hint").hidden = true; selected = new Set(); renderCatalog($("cat-search").value); draw(); renderInspector(); break;
+      case "ArrowLeft": e.preventDefault(); nudge(-step, 0); break;
+      case "ArrowRight": e.preventDefault(); nudge(step, 0); break;
+      case "ArrowUp": e.preventDefault(); nudge(0, -step); break;
+      case "ArrowDown": e.preventDefault(); nudge(0, step); break;
+      case "+": case "=": view.zoomBy(0.8); break;
+      case "-": view.zoomBy(1.25); break;
+      case "0": view.fit(); break;
+    }
+  });
+  document.addEventListener("keyup", (e) => { if (e.key === " ") { spaceDown = false; svg.style.cursor = tool === "pan" ? "grab" : ""; } });
+
+  /* ---------- inspector ---------- */
+  function renderInspector() {
+    const el = $("panel-props");
+    if (selected.size === 0) { el.innerHTML = summaryPanel(); return; }
+    if (selected.size > 1) {
+      const counts = {};
+      for (const id of selected) { const c = T[byId(id).tpl].category; counts[c] = (counts[c] || 0) + 1; }
+      el.innerHTML = `<div class="insp-head"><span class="eyebrow">Selection</span><h2>${selected.size} elements</h2></div>
+        <div class="side-section stack">
+          <dl class="kv">${Object.entries(counts).map(([k, v]) => `<dt>${k}</dt><dd class="num">${v}</dd>`).join("")}</dl>
+          <div class="row"><button class="btn btn-sm" data-act="rotate"><svg class="ico"><use href="#i-rotate"/></svg> Rotate each 90°</button><button class="btn btn-sm btn-danger" data-act="delete"><svg class="ico"><use href="#i-trash"/></svg> Remove</button></div>
+          <p class="note"><svg class="ico"><use href="#i-info"/></svg>Arrow keys move the selection by one grid cell (${m(scale)}). Hold Shift for 8 cells.</p>
+        </div>`;
+      return;
+    }
+    const p = byId([...selected][0]);
+    const t = T[p.tpl];
+    const b = D.bbox(D.worldPoly(p));
+    const gx = b.minX / scale, gy = b.minY / scale;
+    const onGrid = Number.isInteger(gx) && Number.isInteger(gy);
+    const orig = D.PLACEMENTS.find((q) => q.id === p.id);
+    const st = orig && t.assignable ? D.spaceStatus(orig) : null;
+    const pIssues = issues.filter((i) => i.ids.includes(p.id));
+    el.innerHTML = `
+      <div class="insp-head">
+        <span class="eyebrow">${t.cls === "zone" ? "Zone" : t.cls === "obstacle" ? "Obstacle" : "Physical element"}</span>
+        <h2>${D.esc(p.label || "Unlabeled")}</h2>
+        <div class="row"><span class="tag"><span class="swatch" style="color:var(--cat-${t.color})"></span>${t.category}</span>${t.assignable ? '<span class="tag">Assignable</span>' : ""}${orig ? "" : '<span class="badge draft">New in r14</span>'}</div>
+      </div>
+      ${pIssues.map((i) => `<div style="padding:12px 16px 0"><div class="callout crit"><svg class="ico"><use href="#i-alert"/></svg><div>${i.msg}<br><code>${i.code}</code></div></div></div>`).join("")}
+      <div class="side-section stack">
+        <div class="field"><span class="label">Position (bounding box corner)</span>
+          <div class="coord">
+            <div class="box"><small>X world</small><b>${b.minX}</b><small>${m(b.minX)}, grid ${+gx.toFixed(3)}</small></div>
+            <div class="box"><small>Y world</small><b>${b.minY}</b><small>${m(b.minY)}, grid ${+gy.toFixed(3)}</small></div>
+          </div>
+          ${onGrid ? "" : `<span class="hint">Off the ${scale}-unit grid. Moving it snaps to ${m(scale)} steps; its current position is kept until then.</span>`}
+        </div>
+        <div class="field"><span class="label">Rotation</span>
+          <div class="seg" role="group" aria-label="Rotation">${[0, 90, 180, 270].map((r) => `<button data-rot="${r}" aria-pressed="${p.rot === r}" ${published ? "disabled" : ""}>${r}°</button>`).join("")}</div>
+        </div>
+        <div class="field"><span class="label">Size</span>
+          <div class="mono">${m(b.w)} × ${m(b.h)} <span class="subtle">(${b.w} × ${b.h} units)</span></div>
+          <p class="note"><svg class="ico"><use href="#i-lock"/></svg>Placements can’t be resized. Change the template to create a new revision.</p>
+        </div>
+      </div>
+      <div class="side-section">
+        <dl class="kv">
+          <dt>Template</dt><dd>${t.name}</dd>
+          <dt>Revision</dt><dd>r${t.rev} <span class="subtle">· pinned</span></dd>
+          <dt>Placement ID</dt><dd class="mono">${p.id}</dd>
+          <dt>Label</dt><dd>${p.label ? `<span class="mono">${D.esc(p.label)}</span>` : '<span class="subtle">None</span>'}${t.assignable ? '<br><span class="hint">Set by Workplace Planners</span>' : ""}</dd>
+          ${t.assignable ? `<dt>Assignment</dt><dd>${st && st.emp ? `${D.esc(st.emp.name)} <span class="subtle">in r13</span>` : '<span class="subtle">Vacant</span>'}</dd>` : ""}
+        </dl>
+      </div>
+      <div class="side-section"><button class="btn btn-sm btn-danger" data-act="delete" ${published ? "disabled" : ""}><svg class="ico"><use href="#i-trash"/></svg> Remove from draft</button></div>`;
+  }
+  function summaryPanel() {
+    const counts = {};
+    placements.forEach((p) => { const c = T[p.tpl].category; counts[c] = (counts[c] || 0) + 1; });
+    return `<div class="insp-head"><span class="eyebrow">Floor Plan Revision</span><h2 style="font-family:var(--f-cond);font-weight:600">Floor 3, r14</h2>
+        <span class="subtle" style="font-size:12.5px">Select an element on the plan, or press <kbd>Tab</kbd> in the validation list to jump to one.</span></div>
+      <div class="side-section stack">
+        <h3 class="eyebrow">Contents</h3>
+        <dl class="kv">${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<dt>${k}</dt><dd class="num">${v}</dd>`).join("")}</dl>
+      </div>
+      <div class="side-section stack">
+        <h3 class="eyebrow">Floor Boundary</h3>
+        <p class="muted" style="font-size:12.5px">6 vertices, anticlockwise, closed implicitly. 48 × 30 m overall.</p>
+        <ol class="vert-list">${D.BOUNDARY.map((v) => `<li>${v[0]}, ${v[1]}</li>`).join("")}</ol>
+      </div>
+      <div class="side-section stack">
+        <h3 class="eyebrow">Shortcuts</h3>
+        <div class="kshort">
+          <kbd>V</kbd><span>Select</span><kbd>H</kbd><span>Pan (or hold Space)</span><kbd>R</kbd><span>Rotate 90°</span>
+          <kbd>←→↑↓</kbd><span>Move one grid cell</span><kbd>⌫</kbd><span>Remove</span><kbd>⌘Z</kbd><span>Undo</span><kbd>0</kbd><span>Fit floor</span>
+        </div>
+      </div>`;
+  }
+  $("panel-props").addEventListener("click", (e) => {
+    const r = e.target.closest("[data-rot]"); if (r) return rotateSelection(+r.dataset.rot);
+    const a = e.target.closest("[data-act]"); if (!a) return;
+    a.dataset.act === "delete" ? deleteSelection() : rotateSelection();
+  });
+
+  function renderIssues() {
+    const el = $("panel-issues");
+    if (!issues.length) { el.innerHTML = `<div style="padding:16px"><div class="callout ok"><svg class="ico"><use href="#i-check"/></svg>No problems found. This draft can be published.</div></div>`; return; }
+    const crit = issues.filter((i) => i.sev === "crit"), warn = issues.filter((i) => i.sev === "warn");
+    el.innerHTML = `<div style="padding:12px 16px" class="subtle">${crit.length} error${crit.length === 1 ? "" : "s"}, ${warn.length} blocking warning${warn.length === 1 ? "" : "s"}. Fix all of them to publish.</div>` +
+      issues.map((i, n) => `<button class="issue ${i.sev}" data-n="${n}"><svg class="ico"><use href="#i-${i.sev === "crit" ? "alert" : "info"}"/></svg><span>${i.msg}<br><code>${i.code}</code> <span class="subtle">· ${i.ids.length ? "Show on plan" : "Restore placement"}</span></span></button>`).join("");
+  }
+  $("panel-issues").addEventListener("click", (e) => {
+    const b = e.target.closest(".issue"); if (!b) return;
+    const i = issues[+b.dataset.n];
+    if (!i.ids.length) {
+      const label = i.msg.split(" ")[0];
+      const orig = D.PLACEMENTS.find((q) => q.label === label);
+      const k = removedAssigned.findIndex((x) => x.label === label);
+      if (k >= 0) removedAssigned.splice(k, 1);
+      if (orig && !byId(orig.id)) { selected = new Set([orig.id]); commit(placements.concat({ ...orig })); }
+      else refresh();
+      return D.toast(`Restored ${label}. Its assignment stays in place.`);
+    }
+    selected = new Set(i.ids);
+    const bb = D.bbox(i.ids.flatMap((id) => D.worldPoly(byId(id))));
+    view.fit(bb, 30);
+    draw(); renderInspector();
+  });
+  function showTab(which) {
+    $("tab-props").setAttribute("aria-selected", which === "props");
+    $("tab-issues").setAttribute("aria-selected", which === "issues");
+    $("panel-props").hidden = which !== "props";
+    $("panel-issues").hidden = which !== "issues";
+  }
+  $("tab-props").onclick = () => showTab("props");
+  $("tab-issues").onclick = () => showTab("issues");
+  $("validate").onclick = () => { refresh(); showTab("issues"); D.toast(issues.length ? `${issues.length} problems found` : "No problems found"); };
+
+  /* ---------- publish ---------- */
+  $("publish").onclick = () => {
+    revalidate();
+    const blocking = issues.filter((i) => i.sev === "crit" || i.blocking);
+    $("pub-body").innerHTML = blocking.length
+      ? `<div class="callout crit"><svg class="ico"><use href="#i-alert"/></svg><div>${blocking.length} problem${blocking.length > 1 ? "s" : ""} must be fixed first. Floors are never published with invalid geometry or orphaned assignments.</div></div>
+         <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px">${blocking.map((i) => `<li>${i.msg}</li>`).join("")}</ul>`
+      : `<p>Publishing makes r14 the current plan for Floor 3. In one step:</p>
+         <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+           <li>r13 becomes Archived and read-only.</li>
+           <li>Workplace Planners and Viewers see r14 immediately.</li>
+           <li>Existing assignments follow their placements into r14.</li>
+         </ul>
+         <div class="callout info"><svg class="ico"><use href="#i-info"/></svg>This action is recorded in the audit log with your name.</div>`;
+    $("pub-confirm").disabled = !!blocking.length;
+    $("pub-confirm").textContent = blocking.length ? "Publish" : "Publish r14";
+    $("publish-dialog").hidden = false;
+    (blocking.length ? $("pub-cancel") : $("pub-confirm")).focus();
+  };
+  $("pub-cancel").onclick = () => { $("publish-dialog").hidden = true; $("publish").focus(); };
+  $("pub-confirm").onclick = () => {
+    $("publish-dialog").hidden = true;
+    published = true;
+    $("rev-badge").className = "badge published"; $("rev-badge").textContent = "Published r14";
+    $("readonly-banner").hidden = false;
+    document.querySelectorAll("#publish, #validate, #undo, #redo, #rotate, #delete").forEach((b) => (b.disabled = true));
+    D.toast("Published r14. r13 is archived.");
+    renderInspector();
+  };
+
+  renderCatalog();
+  refresh();
+  requestAnimationFrame(() => view.fit());
+})();
+</script>
+</body>
+</html>

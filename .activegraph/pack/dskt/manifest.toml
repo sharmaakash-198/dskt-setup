@@ -1,0 +1,66 @@
+# Generated manually for the dskt project pack.
+
+[pack]
+name = "dskt"
+version = "0.1.0"
+description = "DSKT project memory: work logs, decision notes, bugs, and GitLab issue references."
+license = "Apache-2.0"
+
+[pack.provenance]
+authors = ["DSKT team"]
+authored_by = "human"
+generator = ""
+source_url = ""
+created_at = "2026-09-02T00:00:00Z"
+
+[pack.integrity]
+# Local unpublished pack. Regenerate this value with upstream pack tooling before publishing.
+content_hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[dependencies]
+activegraph = ">=1.9,<2.0"
+python = ">=3.11"
+python-deps = []
+
+[dependencies.packs]
+core = ">=0.1"
+codebase = ">=0.1"
+
+[surface]
+object_types = ["project", "work_log", "decision_note", "bug"]
+relation_types = ["belongs_to_project", "blocks", "implements", "references", "supersedes", "relates_to", "repo_for_project"]
+behaviors = ["project_linker", "decision_note_linker", "bug_linker", "unblock_on_fix"]
+tools = ["log_work", "log_decision", "register_bug", "fetch_gitlab_issue"]
+settings_schema = "DsktSettings"
+
+[[surface.capabilities]]
+provider = "dskt"
+capability = "log_work"
+risk_class = "low"
+credential_ref = ""
+action_class = "R1"
+
+[[surface.capabilities]]
+provider = "dskt"
+capability = "log_decision"
+risk_class = "low"
+credential_ref = ""
+action_class = "R1"
+
+[[surface.capabilities]]
+provider = "dskt"
+capability = "register_bug"
+risk_class = "low"
+credential_ref = ""
+action_class = "R1"
+
+[[surface.capabilities]]
+provider = "dskt"
+capability = "fetch_gitlab_issue"
+risk_class = "low"
+credential_ref = ""
+action_class = "R0"
+
+[fixtures]
+entrypoint = "fixtures/run_fixtures.py"
+deterministic = true

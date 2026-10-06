@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Employee Import</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .steps { display: flex; gap: 0; list-style: none; margin: 0 0 20px; padding: 0; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--surface); overflow-x: auto; }
+  .steps li { flex: 1; min-width: 150px; padding: 12px 16px; display: flex; gap: 10px; align-items: center; border-right: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
+  .steps li:last-child { border-right: 0; }
+  .steps .n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid currentColor; font: 600 11px var(--f-mono); flex: none; }
+  .steps li.done { color: var(--ok); }
+  .steps li.done .n { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+  .steps li.now { color: var(--ink); font-weight: 600; }
+  .steps li.now .n { border-color: var(--accent); color: var(--accent); }
+  .file { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+  .file .ico-box { width: 40px; height: 40px; border-radius: var(--r-1); background: var(--surface-2); color: var(--ok); display: grid; place-items: center; }
+  .tally { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  @media (max-width: 860px) { .tally { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .tally > div { padding: 14px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+  .tally > div:last-child { border-right: 0; }
+  .tally b { font: 600 24px/1 var(--f-cond); font-variant-numeric: tabular-nums; }
+  .tally span { font-size: 12px; color: var(--ink-3); display: flex; gap: 6px; align-items: center; }
+  .tally .crit b { color: var(--crit); } .tally .warn b { color: var(--warn); }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+  @media (max-width: 1000px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+  .drop { border: 1.5px dashed var(--line-strong); border-radius: var(--r-2); padding: 22px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--surface); }
+  .cols { list-style: none; margin: 0; padding: 0; font-size: 12.5px; display: flex; flex-direction: column; gap: 4px; }
+  .cols li { display: flex; justify-content: space-between; gap: 10px; }
+  .cols code { color: var(--ink); }
+  td .diff { font-family: var(--f-mono); font-size: 12px; }
+  td .diff del { color: var(--ink-3); }
+  td .diff ins { text-decoration: none; color: var(--ok); }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><span class="nav-group-label">Facilities</span><a href="locations.html">Locations</a><a href="revisions.html">Floor plans</a><a href="templates.html">Templates</a></div>
+      <div class="nav-group"><span class="nav-group-label">Workplace</span><a href="assign.html">Assignments</a><a href="import.html" aria-current="page">Imports</a></div>
+      <div class="nav-group"><a href="people.html">People</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">RB</span><div class="user-meta"><b>Rohan Bose</b><span>Workplace Planner</span></div></div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <h1>Import employees</h1>
+        <p class="lede">Upload the HR workbook. Nothing changes until you confirm, and then everything applies together. People missing from the file are left as they are.</p>
+      </div>
+      <a class="btn" href="#history"><svg class="ico"><use href="#i-history"/></svg> Import history</a>
+    </div>
+
+    <ol class="steps" id="steps">
+      <li class="done"><span class="n">1</span>Upload workbook</li>
+      <li class="now"><span class="n">2</span>Review changes</li>
+      <li><span class="n">3</span>Confirm</li>
+      <li><span class="n">4</span>Applied</li>
+    </ol>
+
+    <div class="grid2">
+      <div class="stack" style="gap:20px" id="main"></div>
+
+      <aside class="stack" style="gap:16px">
+        <div class="panel">
+          <div class="panel-head"><h3>Expected columns</h3><span class="tag mono">v1</span></div>
+          <div class="panel-body stack">
+            <ul class="cols">
+              <li><code>employee_id</code><span class="badge plain crit">Required</span></li>
+              <li><code>full_name</code><span class="badge plain crit">Required</span></li>
+              <li><code>employment_status</code><span class="badge plain crit">Required</span></li>
+              <li><code>email</code><span class="subtle">Optional</span></li>
+              <li><code>manager_employee_id</code><span class="subtle">Optional</span></li>
+              <li><code>team_code</code>, <code>team_name</code><span class="subtle">Optional</span></li>
+              <li><code>department_code</code>, <code>department_name</code><span class="subtle">Optional</span></li>
+              <li><code>site_code</code><span class="subtle">Optional</span></li>
+              <li><code>job_title</code><span class="subtle">Optional</span></li>
+            </ul>
+            <p class="hint">Employee ID is how people are matched. Names and emails are never used to match.</p>
+            <button class="btn btn-sm" type="button" onclick="DSKT.toast('The example workbook downloads from the real app.')"><svg class="ico"><use href="#i-download"/></svg> Example workbook</button>
+          </div>
+        </div>
+        <div class="callout info"><svg class="ico"><use href="#i-lock"/></svg><div>Formulas and macros are never run. <code>.xlsm</code> files are rejected. Uploaded files are deleted after the import is applied.</div></div>
+      </aside>
+    </div>
+
+    <section class="panel" id="history" style="margin-top:28px" aria-labelledby="hist-title">
+      <div class="panel-head"><h2 id="hist-title" style="font-size:16px">Import history</h2></div>
+      <div class="table-wrap"><table class="data"><thead><tr><th>File</th><th>Uploaded by</th><th>When</th><th>Result</th><th class="num">Created</th><th class="num">Updated</th><th class="num">Deactivated</th></tr></thead>
+        <tbody id="hist"></tbody></table></div>
+    </section>
+  </main>
+
+<script src="assets/dskt.js"></script>
+<script>
+(function () {
+  const D = DSKT;
+  const $ = (id) => document.getElementById(id);
+  let fixed = false, applied = false, tab = "errors";
+
+  const ERRORS = [
+    { row: 214, col: "employee_id", code: "DUPLICATE_EMPLOYEE_ID", msg: "ARR-10871 also appears on row 96. Each employee ID can appear once." },
+    { row: 388, col: "manager_employee_id", code: "UNKNOWN_MANAGER", msg: "Manager ARR-99102 isn’t in DSKT or in this file. Check the ID or add the manager’s row." },
+    { row: 1031, col: "employment_status", code: "UNSUPPORTED_STATUS", msg: "“On hold” isn’t a recognised status. Use Active, Inactive, Departed or Notice." },
+  ];
+  // The two people this import deactivates while they still hold spaces (same synthetic data as the Assignments page).
+  const held = D.ASSIGNMENTS.filter((a) => D.PEOPLE_BY_ID[a.emp].status === "Inactive").map((a) => ({ e: D.PEOPLE_BY_ID[a.emp], p: D.PLACEMENTS.find((p) => p.id === a.pid) }));
+  const WARNINGS = [
+    ...held.map((h, i) => ({ row: [52, 618][i] || 700, code: "DEACTIVATES_ASSIGNED_EMPLOYEE", msg: `${h.e.name} (${h.e.id}) will be deactivated but holds ${h.p.label}. The assignment stays until a planner ends it.` })),
+    { row: 77, code: "EMAIL_MISSING", msg: "No email for ARR-10988. The import continues without it." },
+    { row: 903, code: "TEAM_DEPARTMENT_MISMATCH", msg: "Team QA Automation is listed under Studios here but Engineering elsewhere in the file." },
+  ];
+  const CHANGES = [
+    ["ARR-10422", "Update", "job_title", "Game Developer", "Senior Game Developer"],
+    ["ARR-10507", "Update", "team", "Game Studio", "Data & Analytics"],
+    ["ARR-11804", "Create", "new record", "", "Tanvi Hegde, QA Engineer"],
+    ["ARR-10261", "Deactivate", "employment_status", "Active", "Departed"],
+    ["ARR-10338", "Update", "manager", "ARR-10203", "ARR-10217"],
+    ["ARR-11805", "Create", "new record", "", "Farhan Sethi, Data Engineer"],
+  ];
+
+  function render() {
+    const errs = fixed ? [] : ERRORS;
+    const steps = $("steps").children;
+    [...steps].forEach((li, i) => (li.className = i < (applied ? 4 : 1) ? "done" : i === (applied ? 3 : 1) ? (applied ? "done" : "now") : ""));
+    if (applied) {
+      $("main").innerHTML = `
+        <div class="panel"><div class="panel-body stack">
+          <div class="callout ok"><svg class="ico"><use href="#i-check"/></svg><div>Import applied. 37 people created, 212 updated, 4 deactivated. 991 rows had no changes. Recorded in the audit log as IMP-0419.</div></div>
+          <p class="muted">2 deactivated people still hold spaces. <a href="assign.html">Review them on Floor 3</a>.</p>
+          <div class="row"><button class="btn" id="again"><svg class="ico"><use href="#i-upload"/></svg> Import another workbook</button></div>
+        </div></div>`;
+      $("again").onclick = () => { applied = false; fixed = false; render(); };
+      renderHistory();
+      return;
+    }
+    $("main").innerHTML = `
+      <section class="panel" aria-label="Uploaded workbook">
+        <div class="panel-body">
+          <div class="file">
+            <span class="ico-box"><svg class="ico"><use href="#i-sheet"/></svg></span>
+            <div style="min-width:0"><b class="mono" style="overflow-wrap:anywhere">${fixed ? "arrise-headcount-2026-10-06-v2.xlsx" : "arrise-headcount-2026-10-06.xlsx"}</b>
+              <div class="subtle" style="font-size:12.5px">Sheet “Employees”, 1,247 rows, 412 KB, SHA-256 <span class="mono">${fixed ? "9c1e…a07b" : "4f2a…e81d"}</span></div></div>
+            <button class="btn btn-sm" id="replace"><svg class="ico"><use href="#i-upload"/></svg> ${fixed ? "Replace" : "Upload corrected file"}</button>
+          </div>
+        </div>
+        <div class="tally">
+          <div><b>37</b><span>Create</span></div>
+          <div><b>212</b><span>Update</span></div>
+          <div><b>4</b><span>Deactivate</span></div>
+          <div><b>991</b><span>No change</span></div>
+          <div class="warn"><b>${WARNINGS.length}</b><span><svg class="ico" style="width:13px;height:13px"><use href="#i-info"/></svg>Warnings</span></div>
+          <div class="${errs.length ? "crit" : ""}"><b>${errs.length}</b><span><svg class="ico" style="width:13px;height:13px"><use href="#i-alert"/></svg>Errors</span></div>
+        </div>
+      </section>
+
+      ${errs.length
+        ? `<div class="callout crit"><svg class="ico"><use href="#i-alert"/></svg><div>Fix ${errs.length} errors in the workbook, then upload it again. The import can’t be applied while any row has an error. No employee data has changed.</div></div>`
+        : `<div class="callout ok"><svg class="ico"><use href="#i-check"/></svg><div>Ready to apply. Review the warnings, then confirm.</div></div>`}
+
+      <section class="panel" aria-label="Rows">
+        <div class="tabs" role="tablist" style="padding-inline:8px">
+          <button role="tab" data-tab="errors" aria-selected="${tab === "errors"}">Errors <span class="count ${errs.length ? "crit" : ""}">${errs.length}</span></button>
+          <button role="tab" data-tab="warnings" aria-selected="${tab === "warnings"}">Warnings <span class="count warn">${WARNINGS.length}</span></button>
+          <button role="tab" data-tab="changes" aria-selected="${tab === "changes"}">Changes <span class="count">253</span></button>
+        </div>
+        <div class="table-wrap">${table(errs)}</div>
+        ${tab === "errors" && errs.length ? `<div class="panel-body" style="border-top:1px solid var(--line)"><button class="btn btn-sm" type="button" onclick="DSKT.toast('The error report downloads from the real app.')"><svg class="ico"><use href="#i-download"/></svg> Download error report</button> <span class="hint">Rows, codes and messages only. Cell contents aren’t included.</span></div>` : ""}
+      </section>
+
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn" id="cancel">Discard import</button>
+        <button class="btn btn-primary" id="confirm" ${errs.length ? "disabled" : ""}>Apply import</button>
+      </div>`;
+    document.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; render(); }));
+    $("replace").onclick = () => { fixed = true; tab = "warnings"; D.toast("Corrected workbook checked: 0 errors"); render(); };
+    $("cancel").onclick = () => D.toast("Import discarded. Nothing changed.");
+    $("confirm").onclick = confirm;
+    renderHistory();
+  }
+  function table(errs) {
+    if (tab === "errors") {
+      if (!errs.length) return `<div class="panel-body subtle">No errors.</div>`;
+      return `<table class="data"><thead><tr><th class="num">Row</th><th>Column</th><th>Problem</th><th>Code</th></tr></thead><tbody>${errs.map((e) => `<tr><td class="num mono">${e.row}</td><td class="mono">${e.col}</td><td>${e.msg}</td><td><code>${e.code}</code></td></tr>`).join("")}</tbody></table>`;
+    }
+    if (tab === "warnings") return `<table class="data"><thead><tr><th class="num">Row</th><th>Warning</th><th>Code</th></tr></thead><tbody>${WARNINGS.map((e) => `<tr><td class="num mono">${e.row}</td><td>${e.msg}</td><td><code>${e.code}</code></td></tr>`).join("")}</tbody></table>`;
+    return `<table class="data"><thead><tr><th>Employee ID</th><th>Change</th><th>Field</th><th>Before → after</th></tr></thead><tbody>${CHANGES.map(([id, k, f, a, b]) => `<tr><td class="mono">${id}</td><td><span class="badge ${k === "Create" ? "ok" : k === "Deactivate" ? "warn" : "draft"}">${k}</span></td><td class="mono">${f}</td><td><span class="diff">${a ? `<del>${a}</del> → ` : ""}<ins>${b}</ins></span></td></tr>`).join("")}<tr><td colspan="4" class="subtle">Showing 6 of 253 changes</td></tr></tbody></table>`;
+  }
+  function confirm() {
+    const s = document.createElement("div");
+    s.className = "scrim";
+    s.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="c-t"><div class="dialog-head"><h2 id="c-t">Apply this import?</h2></div>
+      <div class="dialog-body"><p>This updates DSKT’s employee directory in one step:</p>
+        <ul style="margin:0;padding-left:18px"><li>Create 37 people</li><li>Update 212 people</li><li>Deactivate 4 people (2 still hold spaces)</li></ul>
+        <p class="muted">People not in this workbook stay as they are.</p></div>
+      <div class="dialog-foot"><button class="btn" data-x>Cancel</button><button class="btn btn-primary" data-ok>Apply import</button></div></div>`;
+    document.body.appendChild(s);
+    s.querySelector("[data-ok]").focus();
+    s.querySelector("[data-x]").onclick = () => s.remove();
+    s.querySelector("[data-ok]").onclick = () => { s.remove(); applied = true; D.toast("Import applied"); render(); };
+  }
+  function renderHistory() {
+    const rows = [
+      ...(applied ? [["arrise-headcount-2026-10-06-v2.xlsx", "Rohan Bose", "Today, " + new Date().toTimeString().slice(0, 5), "ok:Applied", 37, 212, 4]] : []),
+      ["arrise-headcount-2026-10-06.xlsx", "Rohan Bose", "Today, 09:12", "crit:Rejected, 3 errors", 0, 0, 0],
+      ["arrise-headcount-2026-09-01.xlsx", "Rohan Bose", "1 Sep 2026", "ok:Applied", 18, 96, 2],
+      ["arrise-headcount-2026-08-04.xlsx", "Diya Nair", "4 Aug 2026", "ok:Applied", 41, 133, 6],
+      ["arrise-headcount-2026-08-04.xlsx", "Diya Nair", "4 Aug 2026", "archived:Duplicate, not applied", 0, 0, 0],
+    ];
+    $("hist").innerHTML = rows.map(([f, who, when, res, c, u, d]) => { const [k, l] = res.split(":"); return `<tr><td class="mono" style="font-size:12.5px">${f}</td><td>${who}</td><td>${when}</td><td><span class="badge ${k}">${l}</span></td><td class="num">${c}</td><td class="num">${u}</td><td class="num">${d}</td></tr>`; }).join("");
+  }
+  render();
+})();
+</script>
+</body>
+</html>

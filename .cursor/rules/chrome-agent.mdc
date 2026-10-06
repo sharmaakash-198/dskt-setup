@@ -1,0 +1,24 @@
+---
+description: Prefer chrome-agent CLI for all browser work in this repo
+alwaysApply: true
+---
+
+# Browser = chrome-agent
+
+For any browser / page / UI / localhost smoke / web debugging task in **DSKT**:
+
+1. **Read and follow** the project skill `.agents/skills/chrome-agent/SKILL.md` (or invoke `/chrome-agent`).
+2. Drive Chrome with the **`chrome-agent` CLI** (CDP), not Playwright MCP / `browser_*` tools.
+3. Launch from the **DSKT-setup root** so the instance is named `DSKT-setup-NN`.
+4. Fallback to Playwright only if `chrome-agent` is not installed and the user declines installing it — then say so explicitly.
+
+## Lavish boundary
+
+Normal Lavish review sessions are excluded from this browser rule: Lavish opens and manages its own review tab. Do not drive that tab with chrome-agent. For sanctioned Lavish testing or debugging, start Lavish with `--no-open`, then navigate chrome-agent to the returned URL. Never run two competing control loops on one review tab.
+
+Quick path:
+
+```bash
+chrome-agent status || chrome-agent launch
+chrome-agent guide --path   # full agent manual
+```

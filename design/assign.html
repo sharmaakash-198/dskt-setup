@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floor 3 Assignments</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .floor-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .floor-bar h1 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .floor-pick { display: flex; align-items: center; gap: 6px; }
+  .floor-pick select { height: 30px; }
+  .stats { display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--r-2); overflow: hidden; }
+  .stat { display: flex; align-items: center; gap: 7px; padding: 5px 12px; border: 0; border-right: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); background: var(--surface); cursor: pointer; }
+  .stat:last-child { border-right: 0; }
+  .stat b { font: 600 14px var(--f-mono); color: var(--ink); }
+  .stat[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .stat[aria-pressed="true"] b { color: var(--accent); }
+  .glyph { width: 12px; height: 12px; flex: none; }
+
+  .workspace { grid-template-columns: 300px minmax(0, 1fr) 340px; }
+  .res { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 16px; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink); }
+  .res:hover, .res[aria-selected="true"] { background: var(--surface-2); }
+  .res b { display: block; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res small { display: block; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res .avatar { width: 30px; height: 30px; }
+  .space-ico { width: 30px; height: 30px; border-radius: var(--r-1); display: grid; place-items: center; border: 1.5px solid var(--cat-desk); font: 600 9px var(--f-mono); color: var(--ink-2); }
+  .res-group { padding: 10px 16px 4px; }
+
+  .drawer-head { padding: 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .drawer-head h2 { font: 500 22px var(--f-mono); }
+  .occupant { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; }
+  .occupant .avatar { width: 40px; height: 40px; font-size: 13px; }
+  .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .timeline li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; padding-bottom: 12px; position: relative; font-size: 13px; }
+  .timeline li::before { content: ""; position: absolute; left: 6px; top: 14px; bottom: 0; width: 1px; background: var(--line); }
+  .timeline li:last-child::before { display: none; }
+  .timeline .dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--ink-3); background: var(--surface); margin-top: 3px; }
+  .timeline .dot.now { border-color: var(--ok); background: var(--ok); }
+  .timeline .dot.next { border-color: var(--info); border-style: dashed; }
+  .combo-list { border: 1px solid var(--line); border-radius: var(--r-1); max-height: 180px; overflow: auto; }
+  .combo-list button { display: flex; width: 100%; gap: 8px; align-items: center; padding: 7px 10px; border: 0; border-bottom: 1px solid var(--line); background: var(--surface); text-align: left; cursor: pointer; color: var(--ink); font-size: 13px; }
+  .combo-list button:last-child { border-bottom: 0; }
+  .combo-list button:hover, .combo-list button[aria-selected="true"] { background: var(--accent-soft); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .label-preview { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-1); }
+  .label-preview table.data td, .label-preview table.data th { padding: 6px 10px; }
+  .legend-card { left: 12px; bottom: 12px; padding: 10px 12px; }
+  .zoom-card { right: 12px; top: 12px; display: flex; padding: 3px; gap: 2px; align-items: center; }
+  .zoom-card output { font: 500 12px var(--f-mono); min-width: 44px; text-align: center; }
+  .sel-bar { top: 12px; left: 50%; transform: translateX(-50%); padding: 6px 6px 6px 14px; display: flex; gap: 12px; align-items: center; font-size: 13px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><span class="nav-group-label">Facilities</span><a href="locations.html">Locations</a><a href="revisions.html">Floor plans</a><a href="templates.html">Templates</a></div>
+      <div class="nav-group"><span class="nav-group-label">Workplace</span><a href="assign.html" aria-current="page">Assignments</a><a href="import.html">Imports</a></div>
+      <div class="nav-group"><a href="people.html">People</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">RB</span><div class="user-meta"><b>Rohan Bose</b><span>Workplace Planner</span></div></div>
+    </div>
+  </header>
+
+  <div class="floor-bar desktop-only">
+    <div>
+      <div class="crumbs" style="margin:0 0 2px"><a href="locations.html">Noida</a><span class="sep">/</span><a href="locations.html">Tower B</a></div>
+      <h1>Floor 3 <span class="badge published">Published r13</span></h1>
+    </div>
+    <div class="stats" role="group" aria-label="Filter spaces by status" id="stats"></div>
+    <div class="spacer"></div>
+    <span class="subtle" style="font-size:12.5px">Shift-click or drag to select several spaces</span>
+  </div>
+
+  <div class="workspace desktop-only">
+    <aside class="side" aria-label="Search people and spaces">
+      <div class="side-section stack" style="gap:10px">
+        <div class="search"><svg class="ico"><use href="#i-search"/></svg><input class="input" id="q" type="search" placeholder="Search people, IDs or spaces" aria-label="Search people, employee IDs or space labels" autocomplete="off"></div>
+        <div class="seg" role="group" aria-label="Result type" id="kind">
+          <button data-kind="people" aria-pressed="true">People</button><button data-kind="spaces" aria-pressed="false">Spaces</button><button data-kind="unassigned" aria-pressed="false">Without a space</button>
+        </div>
+      </div>
+      <div class="side-scroll" id="results" role="listbox" aria-label="Results"></div>
+    </aside>
+
+    <main class="canvas-wrap" aria-label="Floor 3 assignment map. Space details appear in the panel on the right.">
+      <svg class="map" id="map" role="img" aria-label="Floor 3 published plan with assignment status"></svg>
+      <div class="floating zoom-card">
+        <button class="btn btn-ghost btn-icon btn-sm" id="zoom-out" aria-label="Zoom out"><svg class="ico"><use href="#i-zoomOut"/></svg></button>
+        <output id="zoom-val">100%</output>
+        <button class="btn btn-ghost btn-icon btn-sm" id="zoom-in" aria-label="Zoom in"><svg class="ico"><use href="#i-zoomIn"/></svg></button>
+        <button class="btn btn-ghost btn-icon btn-sm" id="zoom-fit" aria-label="Fit floor"><svg class="ico"><use href="#i-fit"/></svg></button>
+      </div>
+      <div class="floating sel-bar" id="sel-bar" hidden>
+        <span><b id="sel-n">0</b> spaces selected</span>
+        <button class="btn btn-sm btn-primary" id="open-label"><svg class="ico"><use href="#i-tag"/></svg> Label spaces</button>
+        <button class="btn btn-sm btn-ghost" id="clear-sel">Clear</button>
+      </div>
+      <div class="floating legend-card">
+        <div class="legend">
+          <span><svg class="glyph" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="var(--ink-2)"/></svg>Occupied</span>
+          <span><svg class="glyph" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="none" stroke="var(--info)" stroke-dasharray="2 1.4" stroke-width="1.3"/><path d="M6 3.5V6l2 1.3" stroke="var(--info)" fill="none"/></svg>Starts soon</span>
+          <span><svg class="glyph" viewBox="0 0 12 12"><rect x="1" y="3" width="10" height="6" fill="var(--el-fill)" stroke="var(--cat-desk)"/></svg>Vacant</span>
+          <span><svg class="glyph" viewBox="0 0 12 12"><path d="M6 1 11.5 10.5H.5z" fill="var(--warn)"/></svg>Occupant inactive</span>
+          <span><span class="swatch" style="color:var(--cat-desk)"></span>Desk</span>
+          <span><span class="swatch" style="color:var(--cat-office)"></span>Private office</span>
+        </div>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </main>
+
+    <aside class="side right" aria-label="Details" id="drawer"></aside>
+  </div>
+
+  <div class="desktop-only-msg">
+    <div class="stack" style="max-width:420px;text-align:center;align-items:center">
+      <h2>Assignments need a larger screen</h2>
+      <p class="muted">Assigning and labeling spaces works on desktop and laptop screens. On this device you can <a href="people.html">look someone up</a>.</p>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="label-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="lbl-title" style="width:min(620px,100%)">
+    <div class="dialog-head"><h2 id="lbl-title">Label <span id="lbl-n">0</span> spaces</h2><p class="muted" style="margin-top:4px">Labels apply together or not at all.</p></div>
+    <div class="dialog-body">
+      <div class="two">
+        <div class="field"><label for="lbl-prefix">Prefix</label><input class="input mono" id="lbl-prefix" value="B-"></div>
+        <div class="field"><label for="lbl-start">Starting number</label><input class="input mono" id="lbl-start" type="number" min="0" value="73"><span class="hint">B-001 to B-072 already exist</span></div>
+        <div class="field"><label for="lbl-width">Digits</label><input class="input mono" id="lbl-width" type="number" min="1" max="6" value="3"><span class="hint">3 digits → 073</span></div>
+        <div class="field"><label for="lbl-order">Order</label>
+          <select class="input" id="lbl-order">
+            <option value="rows">Rows, left to right</option>
+            <option value="snake">Rows, alternating direction</option>
+            <option value="cols">Columns, top to bottom</option>
+          </select></div>
+      </div>
+      <div id="lbl-status"></div>
+      <div class="label-preview"><table class="data"><thead><tr><th>#</th><th>Current</th><th>New label</th><th>Status</th></tr></thead><tbody id="lbl-rows"></tbody></table></div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" id="lbl-cancel">Cancel</button>
+      <button class="btn btn-primary" id="lbl-apply">Apply labels</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/dskt.js"></script>
+<script>
+(function () {
+  const D = DSKT, T = D.TEMPLATES;
+  const $ = (id) => document.getElementById(id);
+  const svg = D.setupMap($("map"));
+  const placements = D.PLACEMENTS.map((p) => ({ ...p }));
+  let assignments = D.ASSIGNMENTS.map((a) => ({ ...a }));
+  const spaces = () => placements.filter((p) => T[p.tpl].assignable);
+  const byId = (id) => placements.find((p) => p.id === id);
+  const status = (p) => D.spaceStatus(p, assignments);
+  const fmt = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const TODAY = "2026-10-06";
+
+  let selected = new Set(), filter = null, kind = "people", focusEmp = null, highlight = new Set();
+
+  const view = D.MapView(svg, { onChange: () => ($("zoom-val").textContent = view.zoomPercent() + "%"), panGate: (e) => !e.target.closest(".hit") && !e.shiftKey });
+  function draw() {
+    D.renderFloor(svg, {
+      mode: "workplace", placements, selected, highlight, status,
+      dim: (p) => filter && T[p.tpl].assignable && status(p).state !== filter,
+    });
+    $("sel-bar").hidden = selected.size < 2;
+    $("sel-n").textContent = selected.size;
+  }
+
+  /* ---------- stats / filters ---------- */
+  const STATES = [
+    ["occupied", "Occupied", '<circle cx="6" cy="6" r="5" fill="var(--ink-2)"/>'],
+    ["future", "Starts soon", '<circle cx="6" cy="6" r="4.6" fill="none" stroke="var(--info)" stroke-dasharray="2 1.4" stroke-width="1.3"/>'],
+    ["vacant", "Vacant", '<rect x="1" y="3" width="10" height="6" fill="none" stroke="var(--cat-desk)"/>'],
+    ["inactive", "Inactive", '<path d="M6 1 11.5 10.5H.5z" fill="var(--warn)"/>'],
+  ];
+  function renderStats() {
+    const c = { occupied: 0, future: 0, vacant: 0, inactive: 0 };
+    spaces().forEach((p) => c[status(p).state]++);
+    $("stats").innerHTML = STATES.map(([k, l, g]) => `<button class="stat" data-f="${k}" aria-pressed="${filter === k}"><svg class="glyph" viewBox="0 0 12 12">${g}</svg>${l} <b>${c[k]}</b></button>`).join("");
+  }
+  $("stats").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-f]"); if (!b) return;
+    filter = filter === b.dataset.f ? null : b.dataset.f;
+    renderStats(); draw();
+    if (filter) { kind = "spaces"; syncKind(); renderResults(); }
+  });
+
+  /* ---------- search results ---------- */
+  function syncKind() { document.querySelectorAll("#kind button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.kind === kind)); }
+  $("kind").addEventListener("click", (e) => { const b = e.target.closest("[data-kind]"); if (!b) return; kind = b.dataset.kind; syncKind(); renderResults(); });
+  $("q").addEventListener("input", renderResults);
+  function assignmentsOf(empId) { return assignments.filter((a) => a.emp === empId); }
+  function renderResults() {
+    const q = $("q").value.trim().toLowerCase();
+    let html = "";
+    if (kind === "spaces") {
+      const list = spaces().filter((p) => (!filter || status(p).state === filter) && (!q || (p.label || "unlabeled").toLowerCase().includes(q) || (status(p).emp && status(p).emp.name.toLowerCase().includes(q))));
+      html = `<div class="res-group eyebrow">${list.length} spaces</div>` + list.slice(0, 120).map((p) => {
+        const s = status(p);
+        const sub = s.state === "vacant" ? "Vacant" : s.state === "future" ? `${s.emp.name}, from ${fmt(s.a.start)}` : s.state === "inactive" ? `${s.emp.name}, inactive` : s.emp.name;
+        return `<button class="res" role="option" data-space="${p.id}" aria-selected="${selected.has(p.id)}"><span class="space-ico" style="border-color:var(--cat-${T[p.tpl].color})">${p.tpl === "office" ? "OFF" : "DSK"}</span><span><b class="mono">${p.label || "Unlabeled"}</b><small>${D.esc(sub)}</small></span>${s.state === "inactive" ? '<span class="badge warn">Inactive</span>' : ""}</button>`;
+      }).join("");
+    } else {
+      const people = D.PEOPLE.filter((e) => {
+        const has = assignmentsOf(e.id).length > 0;
+        if (kind === "unassigned" && (has || e.status === "Inactive")) return false;
+        return !q || e.name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q) || e.teamName.toLowerCase().includes(q);
+      });
+      html = `<div class="res-group eyebrow">${people.length} ${kind === "unassigned" ? "active people without a space" : "people"}</div>` + people.slice(0, 120).map((e) => {
+        const as = assignmentsOf(e.id);
+        const where = as.map((a) => byId(a.pid).label + (a.state === "future" ? " (soon)" : "")).join(", ");
+        return `<button class="res" role="option" data-emp="${e.id}" aria-selected="${focusEmp === e.id}"><span class="avatar">${D.initials(e.name)}</span><span><b>${D.esc(e.name)}</b><small>${e.teamName}, <span class="mono">${e.id}</span></small></span>${e.status === "Inactive" ? '<span class="badge warn">Inactive</span>' : `<span class="mono subtle" style="font-size:12px">${where || "None"}</span>`}</button>`;
+      }).join("");
+    }
+    $("results").innerHTML = html;
+  }
+  $("results").addEventListener("click", (e) => {
+    const s = e.target.closest("[data-space]"), p = e.target.closest("[data-emp]");
+    if (s) { selected = new Set([s.dataset.space]); focusEmp = null; highlight = new Set(); zoomTo([s.dataset.space]); showSpace(s.dataset.space); }
+    if (p) {
+      focusEmp = p.dataset.emp; selected = new Set();
+      const ids = assignmentsOf(focusEmp).map((a) => a.pid);
+      highlight = new Set(ids);
+      if (ids.length) zoomTo(ids);
+      showEmployee(focusEmp);
+    }
+    draw(); renderResults();
+  });
+  function zoomTo(ids) {
+    const b = D.bbox(ids.flatMap((id) => D.worldPoly(byId(id))));
+    view.fit({ minX: b.minX - 40, maxX: b.maxX + 40, minY: b.minY - 30, maxY: b.maxY + 30 }, 0);
+  }
+
+  /* ---------- map interaction ---------- */
+  let marquee = null;
+  svg.addEventListener("pointerdown", (e) => {
+    const hit = e.target.closest(".hit");
+    const w = view.toWorld(e);
+    if (hit) {
+      const id = hit.dataset.id;
+      if (e.shiftKey || e.metaKey) { selected.has(id) ? selected.delete(id) : selected.add(id); }
+      else selected = new Set([id]);
+      focusEmp = null; highlight = new Set();
+      selected.size === 1 ? showSpace([...selected][0]) : showMulti();
+      draw();
+    } else if (e.shiftKey) {
+      marquee = { x0: w.x, y0: w.y, x1: w.x, y1: w.y };
+      svg.setPointerCapture(e.pointerId);
+    }
+  });
+  svg.addEventListener("pointermove", (e) => {
+    const w = view.toWorld(e);
+    if (marquee) {
+      marquee.x1 = w.x; marquee.y1 = w.y;
+      const r = marquee;
+      svg.querySelector(".layer-preview").innerHTML = `<rect class="marquee" x="${Math.min(r.x0, r.x1)}" y="${Math.min(r.y0, r.y1)}" width="${Math.abs(r.x1 - r.x0)}" height="${Math.abs(r.y1 - r.y0)}"/>`;
+      return;
+    }
+    const hit = e.target.closest(".hit");
+    const tip = $("tip");
+    if (!hit || view.panning) { tip.hidden = true; return; }
+    const p = byId(hit.dataset.id), s = status(p), t = T[p.tpl];
+    const rect = svg.getBoundingClientRect();
+    tip.innerHTML = `<h4>${p.label || "Unlabeled"}</h4><div class="subtle" style="margin-bottom:6px">${t.name}</div>` +
+      (s.emp ? `<div><b>${D.esc(s.emp.name)}</b></div><div class="subtle">${s.emp.teamName}</div>` : `<div class="subtle">Vacant</div>`) +
+      (s.state === "future" ? `<div style="margin-top:4px;color:var(--info)">Starts ${fmt(s.a.start)}</div>` : "") +
+      (s.state === "inactive" ? `<div style="margin-top:4px;color:var(--warn)">Occupant is inactive</div>` : "");
+    tip.style.left = Math.min(e.clientX - rect.left + 14, rect.width - 270) + "px";
+    tip.style.top = e.clientY - rect.top + 14 + "px";
+    tip.hidden = false;
+  });
+  svg.addEventListener("pointerleave", () => ($("tip").hidden = true));
+  svg.addEventListener("pointerup", () => {
+    if (!marquee) return;
+    const r = marquee; marquee = null;
+    svg.querySelector(".layer-preview").innerHTML = "";
+    const box = { minX: Math.min(r.x0, r.x1), maxX: Math.max(r.x0, r.x1), minY: Math.min(r.y0, r.y1), maxY: Math.max(r.y0, r.y1) };
+    spaces().forEach((p) => { const b = D.bbox(D.worldPoly(p)); if (b.minX >= box.minX && b.maxX <= box.maxX && b.minY >= box.minY && b.maxY <= box.maxY) selected.add(p.id); });
+    selected.size === 1 ? showSpace([...selected][0]) : selected.size ? showMulti() : showOverview();
+    draw();
+  });
+  $("zoom-in").onclick = () => view.zoomBy(0.8);
+  $("zoom-out").onclick = () => view.zoomBy(1.25);
+  $("zoom-fit").onclick = () => view.fit();
+  $("clear-sel").onclick = () => { selected = new Set(); draw(); showOverview(); };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("label-dialog").hidden) { selected = new Set(); draw(); showOverview(); } });
+
+  /* ---------- drawer ---------- */
+  const drawer = $("drawer");
+  function showOverview() {
+    const vacantLabeled = spaces().filter((p) => p.label && status(p).state === "vacant").length;
+    const unlabeled = spaces().filter((p) => !p.label).length;
+    const without = D.PEOPLE.filter((e) => e.status === "Active" && !assignmentsOf(e.id).length).length;
+    const inactive = spaces().filter((p) => status(p).state === "inactive");
+    drawer.innerHTML = `
+      <div class="drawer-head"><span class="eyebrow">Floor 3, today</span><h2 style="font-family:var(--f-cond);font-weight:600;font-size:19px">What needs attention</h2></div>
+      <div class="side-scroll"><div class="side-section stack">
+        ${inactive.length ? `<div class="callout warn"><svg class="ico"><use href="#i-alert"/></svg><div>${inactive.length} spaces held by inactive people. The last import deactivated them. End these assignments to free the spaces.<div class="row" style="margin-top:8px">${inactive.map((p) => `<button class="btn btn-sm" data-goto="${p.id}">${p.label}</button>`).join("")}</div></div></div>` : ""}
+        ${unlabeled ? `<div class="callout info"><svg class="ico"><use href="#i-tag"/></svg><div>${unlabeled} desks have no label. Labels are needed before you can assign them. <button class="btn btn-sm" style="margin-top:8px" id="pick-unlabeled">Select unlabeled desks</button></div></div>` : ""}
+        <dl class="kv">
+          <dt>Vacant, labeled</dt><dd class="num">${vacantLabeled} spaces</dd>
+          <dt>Active, no space</dt><dd class="num">${without} people</dd>
+        </dl>
+        <p class="subtle" style="font-size:12.5px">Select a space on the plan to see its occupant and history, or search for a person on the left.</p>
+      </div></div>`;
+  }
+  drawer.addEventListener("click", (e) => {
+    const g = e.target.closest("[data-goto]");
+    if (g) { selected = new Set([g.dataset.goto]); zoomTo([g.dataset.goto]); showSpace(g.dataset.goto); draw(); return; }
+    if (e.target.closest("#pick-unlabeled")) { selected = new Set(spaces().filter((p) => !p.label).map((p) => p.id)); zoomTo([...selected]); showMulti(); draw(); return; }
+    const end = e.target.closest("[data-end]");
+    if (end) { endAssignment(end.dataset.end); return; }
+    if (e.target.closest("#start-assign")) { showAssignForm([...selected][0]); return; }
+    if (e.target.closest("#open-label-2")) openLabel();
+    const empLink = e.target.closest("[data-emp-link]");
+    if (empLink) { focusEmp = empLink.dataset.empLink; highlight = new Set(assignmentsOf(focusEmp).map((a) => a.pid)); selected = new Set(); showEmployee(focusEmp); draw(); }
+  });
+
+  function historyFor(p) {
+    // Illustrative earlier occupant.
+    const s = status(p);
+    const items = [];
+    if (s.next) items.push(`<li><span class="dot next"></span><span><b>${D.esc(D.PEOPLE_BY_ID[s.next.emp].name)}</b><br><span class="subtle">From ${fmt(s.next.start)}</span></span></li>`);
+    if (s.state === "future") items.push(`<li><span class="dot next"></span><span><b>${D.esc(s.emp.name)}</b><br><span class="subtle">From ${fmt(s.a.start)}, no end date</span></span></li>`);
+    if (s.a && s.state !== "future") items.push(`<li><span class="dot now"></span><span><b>${D.esc(s.emp.name)}</b> <span class="subtle">now</span><br><span class="subtle">Since ${fmt(s.a.start)}, no end date</span></span></li>`);
+    items.push(`<li><span class="dot"></span><span>Ishaan Mehta<br><span class="subtle">12 Feb 2024 to 28 Feb 2025</span></span></li>`);
+    return `<ol class="timeline">${items.join("")}</ol>`;
+  }
+
+  function showSpace(id) {
+    const p = byId(id), t = T[p.tpl], s = status(p);
+    let occ = "";
+    if (s.emp) {
+      occ = `<div class="occupant"><span class="avatar">${D.initials(s.emp.name)}</span><div><b><a href="#" data-emp-link="${s.emp.id}">${D.esc(s.emp.name)}</a></b><div class="subtle" style="font-size:12.5px">${s.emp.title}, ${s.emp.teamName}</div><div class="mono subtle" style="font-size:12px">${s.emp.id}</div></div></div>
+        ${s.state === "inactive" ? `<div class="callout warn"><svg class="ico"><use href="#i-alert"/></svg><div>${D.esc(s.emp.name)} was marked inactive by the import on 3 Oct 2026. Their assignment stays until you end it.</div></div>` : ""}
+        ${s.state === "future" ? `<div class="callout info"><svg class="ico"><use href="#i-clock"/></svg><div>Moves in on ${fmt(s.a.start)}. The space is vacant until then.</div></div>` : ""}
+        <div class="row"><button class="btn btn-sm" data-end="${s.a.id}">${s.state === "future" ? "Cancel upcoming assignment" : "End assignment"}</button><button class="btn btn-sm btn-ghost" id="start-assign">Schedule next occupant</button></div>`;
+    } else {
+      occ = p.label
+        ? `<div class="callout ok"><svg class="ico"><use href="#i-check"/></svg><div>Vacant and ready to assign.</div></div><button class="btn btn-primary" id="start-assign"><svg class="ico"><use href="#i-user"/></svg> Assign someone</button>`
+        : `<div class="callout info"><svg class="ico"><use href="#i-tag"/></svg><div>This desk needs a label before anyone can be assigned to it.</div></div><button class="btn" id="open-label-2"><svg class="ico"><use href="#i-tag"/></svg> Label this space</button>`;
+    }
+    drawer.innerHTML = `
+      <div class="drawer-head"><span class="eyebrow">${t.category}</span><h2>${p.label || "Unlabeled"}</h2>
+        <div class="row"><span class="tag"><span class="swatch" style="color:var(--cat-${t.color})"></span>${t.name}</span></div></div>
+      <div class="side-scroll">
+        <div class="side-section stack"><h3 class="eyebrow">Occupant</h3>${occ}</div>
+        <div class="side-section stack"><h3 class="eyebrow">History</h3>${historyFor(p)}</div>
+        <div class="side-section"><dl class="kv"><dt>Zone</dt><dd>${zoneOf(p)}</dd><dt>Space ID</dt><dd class="mono">${p.id}</dd></dl></div>
+      </div>`;
+  }
+  function zoneOf(p) {
+    const b = D.bbox(D.worldPoly(p));
+    const z = placements.find((q) => T[q.tpl].cls === "zone" && T[q.tpl].color === "zone" && (() => { const zb = D.bbox(D.worldPoly(q)); return b.minX >= zb.minX && b.maxX <= zb.maxX && b.minY >= zb.minY && b.maxY <= zb.maxY; })());
+    return z ? z.label : "None";
+  }
+
+  function showMulti() {
+    const list = [...selected].map(byId);
+    const c = { occupied: 0, future: 0, vacant: 0, inactive: 0 };
+    list.forEach((p) => c[status(p).state]++);
+    drawer.innerHTML = `
+      <div class="drawer-head"><span class="eyebrow">Selection</span><h2 style="font-family:var(--f-cond);font-weight:600;font-size:19px">${list.length} spaces</h2></div>
+      <div class="side-scroll"><div class="side-section stack">
+        <dl class="kv"><dt>Occupied</dt><dd class="num">${c.occupied}</dd><dt>Starts soon</dt><dd class="num">${c.future}</dd><dt>Vacant</dt><dd class="num">${c.vacant}</dd><dt>Inactive occupant</dt><dd class="num">${c.inactive}</dd><dt>Unlabeled</dt><dd class="num">${list.filter((p) => !p.label).length}</dd></dl>
+        <button class="btn btn-primary" id="open-label-2"><svg class="ico"><use href="#i-tag"/></svg> Label ${list.length} spaces</button>
+        <p class="subtle" style="font-size:12.5px">Shift-click a space to add or remove it. Shift-drag on empty floor to select an area.</p>
+      </div></div>`;
+  }
+
+  function showEmployee(empId) {
+    const e = D.PEOPLE_BY_ID[empId];
+    const as = assignmentsOf(empId);
+    const mgr = e.manager ? D.PEOPLE_BY_ID[e.manager] : null;
+    drawer.innerHTML = `
+      <div class="drawer-head"><span class="eyebrow">Person</span>
+        <div class="occupant"><span class="avatar">${D.initials(e.name)}</span><div><h2 style="font-family:var(--f-cond);font-weight:600;font-size:19px">${D.esc(e.name)}</h2><div class="subtle" style="font-size:12.5px">${e.title}</div></div></div>
+        ${e.status === "Inactive" ? '<span class="badge warn">Inactive</span>' : '<span class="badge ok">Active</span>'}</div>
+      <div class="side-scroll">
+        <div class="side-section stack"><h3 class="eyebrow">Spaces, ${as.length}</h3>
+          ${as.length ? as.map((a) => { const p = byId(a.pid); return `<div class="row" style="justify-content:space-between"><span><b class="mono">${p.label}</b> <span class="subtle">${T[p.tpl].category}</span><br><span class="subtle" style="font-size:12px">${a.state === "future" ? "From" : "Since"} ${fmt(a.start)}</span></span><button class="btn btn-sm" data-end="${a.id}">End</button></div>`; }).join("<hr class='divider'>") : '<p class="subtle">No space yet. Select a vacant space on the plan, then choose Assign someone.</p>'}
+          ${as.length > 1 ? '<p class="hint">People can hold more than one space, for example an office and a studio desk.</p>' : ""}
+        </div>
+        <div class="side-section"><dl class="kv">
+          <dt>Employee ID</dt><dd class="mono">${e.id}</dd><dt>Team</dt><dd>${e.teamName}</dd><dt>Department</dt><dd>${e.dept}</dd>
+          <dt>Manager</dt><dd>${mgr ? D.esc(mgr.name) : "None"}</dd><dt>Email</dt><dd>${e.email}</dd><dt>Site</dt><dd>${e.site}</dd></dl></div>
+      </div>`;
+  }
+
+  /* ---------- assign ---------- */
+  function showAssignForm(spaceId) {
+    const p = byId(spaceId), s = status(p);
+    const minStart = s.emp && s.state !== "future" ? "" : TODAY;
+    drawer.innerHTML = `
+      <div class="drawer-head"><span class="eyebrow">Assign</span><h2>${p.label}</h2></div>
+      <form class="side-scroll" id="assign-form" novalidate><div class="side-section stack">
+        <div class="field"><label for="emp-q">Person</label>
+          <div class="search"><svg class="ico"><use href="#i-search"/></svg><input class="input" id="emp-q" placeholder="Name or employee ID" autocomplete="off" role="combobox" aria-controls="emp-list" aria-expanded="true"></div>
+          <div class="combo-list" id="emp-list" role="listbox"></div></div>
+        <div id="emp-ctx"></div>
+        <div class="two">
+          <div class="field"><label for="a-start">Starts</label><input class="input" type="date" id="a-start" value="${s.emp && s.state !== "future" ? "2026-10-12" : TODAY}"></div>
+          <div class="field"><label for="a-end">Ends <span class="subtle">(optional)</span></label><input class="input" type="date" id="a-end"></div>
+        </div>
+        <div id="a-err" role="alert"></div>
+        <div class="row"><button class="btn btn-primary" type="submit" id="a-save" disabled>Save assignment</button><button class="btn btn-ghost" type="button" id="a-cancel">Cancel</button></div>
+      </div></form>`;
+    let chosen = null;
+    const list = $("emp-list");
+    function renderList() {
+      const q = $("emp-q").value.toLowerCase();
+      const ppl = D.PEOPLE.filter((e) => e.status === "Active" && (!q || e.name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q)))
+        .sort((a, b) => assignmentsOf(a.id).length - assignmentsOf(b.id).length).slice(0, 8);
+      list.innerHTML = ppl.map((e) => `<button type="button" role="option" data-pick="${e.id}" aria-selected="${chosen === e.id}"><span class="avatar" style="width:24px;height:24px;font-size:10px">${D.initials(e.name)}</span><span style="flex:1">${D.esc(e.name)} <span class="subtle mono" style="font-size:11.5px">${e.id}</span></span><span class="subtle" style="font-size:12px">${assignmentsOf(e.id).map((a) => byId(a.pid).label).join(", ") || "No space"}</span></button>`).join("");
+    }
+    renderList();
+    $("emp-q").addEventListener("input", renderList);
+    list.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-pick]"); if (!b) return;
+      chosen = b.dataset.pick; renderList();
+      const emp = D.PEOPLE_BY_ID[chosen], as = assignmentsOf(chosen);
+      $("emp-ctx").innerHTML = `<div class="callout ${as.length ? "info" : "ok"}"><svg class="ico"><use href="#i-${as.length ? "info" : "check"}"/></svg><div><b>${D.esc(emp.name)}</b>, ${emp.teamName}<br>${as.length ? `Already holds ${as.map((a) => byId(a.pid).label).join(", ")}. This adds another space; it doesn’t move them.` : "Has no space today."}</div></div>`;
+      check();
+    });
+    function check() {
+      const start = $("a-start").value, end = $("a-end").value;
+      let err = "";
+      if (end && end < start) err = "The end date is before the start date.";
+      else if (s.emp && s.state !== "future" && start <= TODAY) err = `${p.label} is assigned to ${s.emp.name} with no end date. End that assignment first, or pick a start date after it ends.`;
+      $("a-err").innerHTML = err ? `<div class="callout crit"><svg class="ico"><use href="#i-alert"/></svg><div>${err}<br><code>ASSIGNMENT_OVERLAP</code></div></div>` : "";
+      $("a-save").disabled = !chosen || !!err;
+    }
+    $("a-start").addEventListener("change", check); $("a-end").addEventListener("change", check);
+    check();
+    $("a-cancel").onclick = () => showSpace(spaceId);
+    $("assign-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!chosen) return;
+      const start = $("a-start").value;
+      if (s.emp && s.state !== "future") { const cur = assignments.find((a) => a.id === s.a.id); cur.end = new Date(new Date(start) - 864e5).toISOString().slice(0, 10); }
+      assignments.push({ id: "as_n" + Date.now(), pid: spaceId, emp: chosen, start, end: $("a-end").value || null, state: start > TODAY ? "future" : "current" });
+      D.toast(`Assigned ${D.PEOPLE_BY_ID[chosen].name} to ${p.label}`);
+      renderStats(); draw(); renderResults(); showSpace(spaceId);
+    });
+    $("emp-q").focus();
+  }
+  function endAssignment(aid) {
+    const a = assignments.find((x) => x.id === aid);
+    const p = byId(a.pid), emp = D.PEOPLE_BY_ID[a.emp];
+    assignments = assignments.filter((x) => x.id !== aid);
+    D.toast(`${a.state === "future" ? "Cancelled" : "Ended"} ${emp.name}’s assignment to ${p.label}`);
+    renderStats(); draw(); renderResults();
+    focusEmp ? showEmployee(focusEmp) : showSpace(p.id);
+  }
+
+  /* ---------- batch labels ---------- */
+  function orderedSelection() {
+    const list = [...selected].map(byId).map((p) => ({ p, b: D.bbox(D.worldPoly(p)) }));
+    const order = $("lbl-order").value;
+    const rowKey = (x) => Math.round(x.b.minY / 4);
+    if (order === "cols") list.sort((a, b) => a.b.minX - b.b.minX || a.b.minY - b.b.minY);
+    else {
+      list.sort((a, b) => rowKey(a) - rowKey(b) || a.b.minX - b.b.minX);
+      if (order === "snake") {
+        const rows = [...new Set(list.map(rowKey))];
+        const out = [];
+        rows.forEach((r, i) => { const row = list.filter((x) => rowKey(x) === r); out.push(...(i % 2 ? row.reverse() : row)); });
+        return out.map((x) => x.p);
+      }
+    }
+    return list.map((x) => x.p);
+  }
+  function previewLabels() {
+    const prefix = $("lbl-prefix").value, start = +$("lbl-start").value, width = +$("lbl-width").value;
+    const list = orderedSelection();
+    const others = new Map(placements.filter((p) => p.label && !selected.has(p.id)).map((p) => [p.label, p]));
+    let blocked = 0;
+    const rows = list.map((p, i) => {
+      const lbl = prefix + String(start + i).padStart(width, "0");
+      const clash = others.get(lbl);
+      if (clash) blocked++;
+      return `<tr><td class="num">${i + 1}</td><td class="mono subtle">${p.label || "None"}</td><td class="mono"><b>${lbl}</b></td><td>${clash ? `<span class="badge crit">Already used</span>` : `<span class="badge ok">OK</span>`}</td></tr>`;
+    });
+    $("lbl-rows").innerHTML = rows.join("");
+    $("lbl-status").innerHTML = blocked
+      ? `<div class="callout crit"><svg class="ico"><use href="#i-alert"/></svg><div>${blocked} label${blocked > 1 ? "s are" : " is"} already used on this floor. Change the prefix or starting number. <code>LABEL_COLLISION</code></div></div>`
+      : `<div class="callout ok"><svg class="ico"><use href="#i-check"/></svg><div>All ${list.length} labels are unique on Floor 3.</div></div>`;
+    $("lbl-apply").disabled = !!blocked;
+    $("lbl-apply").textContent = `Apply ${list.length} labels`;
+  }
+  function openLabel() {
+    if (!selected.size) return;
+    $("lbl-n").textContent = selected.size;
+    $("label-dialog").hidden = false;
+    previewLabels();
+    $("lbl-prefix").focus();
+  }
+  ["lbl-prefix", "lbl-start", "lbl-width", "lbl-order"].forEach((id) => $(id).addEventListener("input", previewLabels));
+  $("open-label").onclick = openLabel;
+  $("lbl-cancel").onclick = () => ($("label-dialog").hidden = true);
+  $("lbl-apply").onclick = () => {
+    const prefix = $("lbl-prefix").value, start = +$("lbl-start").value, width = +$("lbl-width").value;
+    orderedSelection().forEach((p, i) => (p.label = prefix + String(start + i).padStart(width, "0")));
+    $("label-dialog").hidden = true;
+    D.toast(`Labeled ${selected.size} spaces`);
+    draw(); renderResults(); renderStats();
+    selected.size === 1 ? showSpace([...selected][0]) : showMulti();
+  };
+
+  renderStats(); renderResults(); showOverview(); draw();
+  requestAnimationFrame(() => view.fit());
+})();
+</script>
+</body>
+</html>

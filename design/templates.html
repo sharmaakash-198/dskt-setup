@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Template Library</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .lib { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
+  @media (max-width: 1000px) { .lib { grid-template-columns: minmax(0, 1fr); } }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background: var(--line); }
+  .tpl {
+    background: var(--surface); padding: 14px; display: flex; flex-direction: column; gap: 10px; border: 0; text-align: left; cursor: pointer; color: var(--ink); min-width: 0;
+  }
+  .tpl:hover { background: var(--surface-2); }
+  .tpl[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+  .tpl .thumb { height: 64px; display: grid; place-items: center; background: var(--canvas); border-radius: var(--r-1); }
+  .tpl b { font-weight: 500; font-size: 13px; line-height: 1.3; }
+  .tpl small { color: var(--ink-3); font-size: 11.5px; }
+
+  .ed-canvas { position: relative; background: var(--canvas); border-bottom: 1px solid var(--line); height: 380px; }
+  .ed-canvas svg { width: 100%; height: 100%; display: block; touch-action: none; }
+  .ed-canvas .edge { stroke: transparent; stroke-width: 14; vector-effect: non-scaling-stroke; cursor: grab; }
+  .ed-canvas .edge.h { cursor: ns-resize; } .ed-canvas .edge.v { cursor: ew-resize; }
+  .ed-canvas .edge:hover + .edge-vis, .ed-canvas .edge-vis.active { stroke: var(--select); stroke-width: 3; }
+  .ed-canvas .edge-vis { stroke: var(--cat-desk); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+  .ed-canvas .vtx { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+  .ed-canvas .dim { font: 500 1.6px var(--f-mono); fill: var(--ink-2); }
+  .ed-canvas .vnum { font: 600 1.3px var(--f-mono); fill: var(--ink-3); }
+  .ed-tools { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+  .ed-tools > * { pointer-events: auto; }
+  .chip { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-1); padding: 5px 9px; font-size: 12px;  }
+  .vtable { font: 400 12px/1.6 var(--f-mono); display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 2px 14px; margin: 0; padding: 0; list-style: none; counter-reset: v; }
+  .vtable li { counter-increment: v; color: var(--ink-2); }
+  .vtable li::before { content: counter(v) ". "; color: var(--ink-3); }
+  .checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .checks li { display: flex; gap: 8px; align-items: center; }
+  .checks .ok { color: var(--ok); } .checks .bad { color: var(--crit); }
+  .revs td { font-size: 12.5px; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><span class="nav-group-label">Facilities</span><a href="locations.html">Locations</a><a href="revisions.html">Floor plans</a><a href="templates.html" aria-current="page">Templates</a></div>
+      <div class="nav-group"><span class="nav-group-label">Workplace</span><a href="assign.html">Assignments</a><a href="import.html">Imports</a></div>
+      <div class="nav-group"><a href="people.html">People</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">MK</span><div class="user-meta"><b>Meera Kulkarni</b><span>Facilities Admin</span></div></div>
+    </div>
+  </header>
+
+  <main class="page" style="max-width:1360px">
+    <div class="page-head">
+      <div>
+        <h1>Element templates</h1>
+        <p class="lede">Reusable shapes for every Arrise floor. Editing a template saves a new revision; elements already on a floor keep the revision they were placed with.</p>
+      </div>
+      <button class="btn btn-primary"><svg class="ico"><use href="#i-plus"/></svg> New template</button>
+    </div>
+
+    <div class="lib">
+      <section class="panel" aria-label="Template catalog">
+        <div class="filters">
+          <div class="search" style="flex:1;min-width:180px"><svg class="ico"><use href="#i-search"/></svg><input class="input" id="tq" type="search" placeholder="Search templates" aria-label="Search templates"></div>
+          <div class="seg" role="group" aria-label="Spatial class" id="cls">
+            <button data-c="" aria-pressed="true">All</button><button data-c="physical" aria-pressed="false">Physical</button><button data-c="zone" aria-pressed="false">Zones</button><button data-c="obstacle" aria-pressed="false">Obstacles</button>
+          </div>
+        </div>
+        <div class="tpl-grid" id="grid"></div>
+      </section>
+
+      <section class="panel" aria-label="Template editor" id="editor"></section>
+    </div>
+  </main>
+
+<script src="assets/dskt.js"></script>
+<script>
+(function () {
+  const D = DSKT, T = D.TEMPLATES;
+  const $ = (id) => document.getElementById(id);
+  let current = "corner", cls = "", poly = null, dirty = false, label = "";
+
+  function renderGrid() {
+    const q = $("tq").value.toLowerCase();
+    $("grid").innerHTML = Object.entries(T)
+      .filter(([, t]) => (!cls || t.cls === cls) && (t.name + t.category).toLowerCase().includes(q))
+      .map(([k, t]) => `<button class="tpl" data-k="${k}" aria-pressed="${k === current}"><span class="thumb">${D.templateThumb(k, 56)}</span><span><b>${t.name}</b><br><small>${t.category}, r${t.rev}, ${D.TEMPLATE_USAGE[k].toLocaleString()} placed</small></span></button>`).join("");
+  }
+  $("tq").addEventListener("input", renderGrid);
+  $("cls").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-c]"); if (!b) return;
+    cls = b.dataset.c;
+    document.querySelectorAll("#cls button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    renderGrid();
+  });
+  $("grid").addEventListener("click", (e) => {
+    const b = e.target.closest(".tpl"); if (!b) return;
+    current = b.dataset.k; open(); renderGrid();
+  });
+
+  /* ---------- geometry checks for the canonical polygon ---------- */
+  function signedArea(p) { let a = 0; for (let i = 0; i < p.length; i++) { const [x1, y1] = p[i], [x2, y2] = p[(i + 1) % p.length]; a += x1 * y2 - x2 * y1; } return a / 2; }
+  function checks(p) {
+    const n = p.length;
+    const orth = p.every((v, i) => { const w = p[(i + 1) % n]; return v[0] === w[0] || v[1] === w[1]; });
+    const zero = p.some((v, i) => { const w = p[(i + 1) % n]; return v[0] === w[0] && v[1] === w[1]; });
+    const ints = p.every((v) => Number.isInteger(v[0]) && Number.isInteger(v[1]));
+    const area = signedArea(p);
+    return [
+      [orth, "Every edge is horizontal or vertical"],
+      [!zero, "No zero-length edges"],
+      [ints, "Integer coordinates (10 cm units)"],
+      [area !== 0, "Encloses a non-zero area"],
+      [n >= 4 && n <= 100, `Vertex count ${n} (4 to 100)`],
+      [true, "Closed implicitly; first vertex stored once"],
+    ];
+  }
+  const m = (u) => (u / 10).toLocaleString(undefined, { maximumFractionDigits: 1 }) + " m";
+
+  function open() {
+    const t = T[current];
+    poly = t.poly.map((v) => v.slice());
+    dirty = false;
+    label = t.name;
+    const used = D.TEMPLATE_USAGE[current];
+    $("editor").innerHTML = `
+      <div class="panel-head" style="flex-wrap:wrap">
+        <div style="flex:1;min-width:200px"><span class="eyebrow">${t.category}, ${t.cls === "zone" ? "Zone" : t.cls === "obstacle" ? "Obstacle" : "Physical"}</span><h2 style="margin-top:2px">${t.name}</h2></div>
+        <span class="badge plain" id="rev-state">r${t.rev}, latest</span>
+      </div>
+      <div class="ed-canvas">
+        <svg id="ed" aria-label="Template outline. Drag an edge to move it; the outline stays orthogonal."></svg>
+        <div class="ed-tools">
+          <span class="chip">Drag any edge to move it in or out</span>
+          <span class="chip mono" id="ed-size"></span>
+          <span class="spacer"></span>
+          <button class="btn btn-sm" id="ed-reset" disabled>Reset</button>
+        </div>
+      </div>
+      <div class="panel-body stack" style="gap:18px">
+        <div id="save-note"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
+          <div class="stack" style="gap:8px"><h3 class="eyebrow">Shape checks</h3><ul class="checks" id="checks"></ul></div>
+          <div class="stack" style="gap:8px"><h3 class="eyebrow">Vertices, template-local</h3><ol class="vtable" id="verts"></ol><span class="hint">Anticlockwise with y up. Origin at (0, 0).</span></div>
+        </div>
+        <hr class="divider">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+          <div class="field"><label for="t-name">Name</label><input class="input" id="t-name" value="${D.esc(t.name)}"></div>
+          <div class="field"><label for="t-cat">Category</label><select class="input" id="t-cat">${["Desk", "Private Office", "Plant", "Furniture", "Room", "Walking area", "Team area", "Obstacle"].map((c) => `<option ${c === t.category ? "selected" : ""}>${c}</option>`).join("")}</select></div>
+          <div class="field"><span class="label">Assignment</span><label class="check"><input type="checkbox" id="t-assign" ${t.assignable ? "checked" : ""} ${t.cls !== "physical" ? "disabled" : ""}> One person can be assigned to each placement</label></div>
+          <div class="field"><span class="label">Border colour on maps</span><span class="row"><span class="swatch" style="color:var(--cat-${t.color});width:16px;height:16px"></span><span class="muted">${t.color[0].toUpperCase() + t.color.slice(1)} category colour, white interior</span></span></div>
+        </div>
+        <hr class="divider">
+        <div class="stack" style="gap:8px"><h3 class="eyebrow">Revisions</h3>
+          <div class="table-wrap"><table class="data revs"><thead><tr><th>Revision</th><th>Size</th><th>Saved</th><th class="num">Placed</th></tr></thead><tbody>
+            ${Array.from({ length: t.rev }, (_, i) => t.rev - i).map((r, i) => `<tr><td class="mono">r${r}${i === 0 ? ' <span class="badge ok">latest</span>' : ""}</td><td class="mono">${sizeText(t.poly)}</td><td>${["14 Aug 2026", "2 Mar 2026", "19 Nov 2025"][i] || "2025"}, Meera Kulkarni</td><td class="num">${i === 0 ? Math.round(used * 0.7) : Math.round(used * 0.3 / (t.rev - 1 || 1))}</td></tr>`).join("")}
+          </tbody></table></div>
+        </div>
+        <div class="row" style="justify-content:flex-end"><button class="btn" id="discard" disabled>Discard changes</button><button class="btn btn-primary" id="save" disabled>Save as r${t.rev + 1}</button></div>
+      </div>`;
+    bindEditor();
+    draw();
+  }
+  function sizeText(p) { const b = D.bbox(p); return `${m(b.w)} × ${m(b.h)}`; }
+
+  /* ---------- edge-drag editor: keeps the outline orthogonal ---------- */
+  let svg, drag = null;
+  function bindEditor() {
+    svg = $("ed");
+    svg.addEventListener("pointerdown", (e) => {
+      const edge = e.target.closest(".edge"); if (!edge) return;
+      drag = { i: +edge.dataset.i, start: toLocal(e), orig: poly.map((v) => v.slice()) };
+      svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const p = toLocal(e);
+      const i = drag.i, j = (i + 1) % poly.length;
+      const a = drag.orig[i], b = drag.orig[j];
+      poly = drag.orig.map((v) => v.slice());
+      if (a[1] === b[1]) { const dy = Math.round(p.y - drag.start.y); poly[i][1] = a[1] + dy; poly[j][1] = b[1] + dy; }
+      else { const dx = Math.round(p.x - drag.start.x); poly[i][0] = a[0] + dx; poly[j][0] = b[0] + dx; }
+      dirty = JSON.stringify(poly) !== JSON.stringify(T[current].poly);
+      draw(i);
+    });
+    svg.addEventListener("pointerup", () => { drag = null; draw(); });
+    $("ed-reset").onclick = $("discard").onclick = () => { poly = T[current].poly.map((v) => v.slice()); dirty = false; draw(); };
+    $("save").onclick = () => {
+      const t = T[current];
+      if (checks(poly).some(([ok]) => !ok)) return D.toast("Fix the shape checks before saving.", "crit");
+      t.rev += 1; t.poly = poly.map((v) => v.slice());
+      D.toast(`Saved ${t.name} r${t.rev}. Existing placements keep r${t.rev - 1}.`);
+      open(); renderGrid();
+    };
+  }
+  function toLocal(e) { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+
+  function draw(active) {
+    const b = D.bbox(poly.concat(T[current].poly));
+    const pad = Math.max(b.w, b.h) * 0.35 + 4;
+    svg.setAttribute("viewBox", `${b.minX - pad} ${b.minY - pad} ${b.w + pad * 2} ${b.h + pad * 2}`);
+    const t = T[current];
+    const unit = Math.max(1, 2 ** Math.floor(Math.log2(Math.max(b.w, b.h) / 16)));
+    let grid = "";
+    for (let x = Math.floor((b.minX - pad) / unit) * unit; x <= b.maxX + pad; x += unit) grid += `M${x} ${b.minY - pad}V${b.maxY + pad}`;
+    for (let y = Math.floor((b.minY - pad) / unit) * unit; y <= b.maxY + pad; y += unit) grid += `M${b.minX - pad} ${y}H${b.maxX + pad}`;
+    const pts = poly.map((v) => v.join(",")).join(" ");
+    const fs = Math.max(b.w, b.h) / 14;
+    let edges = "", dims = "";
+    poly.forEach((v, i) => {
+      const w = poly[(i + 1) % poly.length];
+      const h = v[1] === w[1];
+      edges += `<line class="edge ${h ? "h" : "v"}" data-i="${i}" x1="${v[0]}" y1="${v[1]}" x2="${w[0]}" y2="${w[1]}"/><line class="edge-vis ${active === i ? "active" : ""}" x1="${v[0]}" y1="${v[1]}" x2="${w[0]}" y2="${w[1]}" stroke="var(--cat-${t.color})"/>`;
+      const len = Math.abs(w[0] - v[0]) + Math.abs(w[1] - v[1]);
+      const mx = (v[0] + w[0]) / 2, my = (v[1] + w[1]) / 2;
+      const inside = signedArea(poly) > 0 ? 1 : -1;
+      const off = fs * 0.9;
+      const nx = h ? 0 : (w[1] > v[1] ? 1 : -1) * inside * off, ny = h ? (w[0] > v[0] ? -1 : 1) * inside * off : 0;
+      const anchor = h ? "middle" : nx < 0 ? "end" : "start";
+      dims += `<text class="dim" x="${mx + nx * 0.6}" y="${my + ny + fs * 0.35}" text-anchor="${anchor}" style="font-size:${fs}px">${m(len)}</text>`;
+    });
+    const verts = poly.map((v, i) => `<circle class="vtx" cx="${v[0]}" cy="${v[1]}" r="${fs * 0.22}"/><text class="vnum" x="${v[0] + fs * 0.35}" y="${v[1] - fs * 0.35}" style="font-size:${fs * 0.7}px">${i + 1}</text>`).join("");
+    svg.innerHTML = `<path d="${grid}" stroke="var(--grid-minor)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      ${dirty ? `<polygon points="${T[current].poly.map((v) => v.join(",")).join(" ")}" fill="none" stroke="var(--ink-3)" stroke-dasharray="4 3" stroke-width="1" vector-effect="non-scaling-stroke"/>` : ""}
+      <polygon points="${pts}" fill="${t.cls === "zone" ? `var(--cat-${t.color})` : "var(--el-fill)"}" fill-opacity="${t.cls === "zone" ? 0.08 : 1}"/>
+      ${edges}${dims}${verts}`;
+    $("ed-size").textContent = `${sizeText(poly)}, grid ${m(unit)}`;
+    $("checks").innerHTML = checks(poly).map(([ok, txt]) => `<li><svg class="ico ${ok ? "ok" : "bad"}"><use href="#i-${ok ? "check" : "x"}"/></svg>${txt}</li>`).join("");
+    $("verts").innerHTML = poly.map((v) => `<li>${v[0]}, ${v[1]}</li>`).join("");
+    $("ed-reset").disabled = $("discard").disabled = $("save").disabled = !dirty;
+    $("rev-state").textContent = dirty ? `Editing → r${t.rev + 1}` : `r${t.rev}, latest`;
+    $("rev-state").className = dirty ? "badge draft" : "badge plain";
+    $("save-note").innerHTML = dirty
+      ? `<div class="callout info"><svg class="ico"><use href="#i-info"/></svg><div>Saving creates <b>r${t.rev + 1}</b>. The ${D.TEMPLATE_USAGE[current].toLocaleString()} elements already placed keep r${t.rev} and do not change size. New placements use r${t.rev + 1}.</div></div>`
+      : "";
+  }
+
+  renderGrid();
+  open();
+})();
+</script>
+</body>
+</html>

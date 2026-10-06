@@ -1,0 +1,30 @@
+# Canonical skills live only in .agents/skills/
+agent/skills/
+.cursor/skills/
+.claude/skills/
+
+# ActiveGraph local runtime and secrets
+.activegraph/data/
+.activegraph/.env
+
+# Harness MCP configs may contain bearer tokens
+.cursor/mcp.json
+.mcp.json
+.agents/mcp_config.json
+
+# Generated agent-tool output
+graphify-out/
+.lavish/
+
+# Machine-local skill environments
+.agents/skills/excalidraw-diagram/references/.venv/
+
+# Independent nested application repositories
+dskt-frontend/
+dskt-backend/
+
+# Common local artifacts
+node_modules/
+.DS_Store
+.idea/
+.vscode/

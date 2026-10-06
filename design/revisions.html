@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floor 3 Revisions</title>
+<link rel="stylesheet" href="assets/dskt.css">
+<style>
+  .lane { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+  @media (max-width: 960px) { .lane { grid-template-columns: minmax(0, 1fr); } }
+  .current { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .current { grid-template-columns: minmax(0, 1fr); } }
+  .rev-card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .rev-card h2 { font: 500 26px var(--f-mono); }
+  .rev-card .row { justify-content: space-between; }
+  .lease { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: center; }
+  .diff { display: flex; gap: 10px; font: 400 12px var(--f-mono); flex-wrap: wrap; }
+  .diff .add { color: var(--ok); } .diff .rem { color: var(--crit); } .diff .mov { color: var(--accent); }
+  .rule { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+  .rule li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; }
+  .rule .ico { color: var(--ink-3); margin-top: 2px; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="DSKT home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="24" height="24" rx="1"/><path class="bm-line" d="M6 6h14v8h-5v6H6z"/><rect class="bm-desk" x="9" y="9" width="5" height="2.6"/></svg>
+      <span class="brand-name">DSKT</span><span class="brand-org">Arrise</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-group"><span class="nav-group-label">Facilities</span><a href="locations.html">Locations</a><a href="revisions.html" aria-current="page">Floor plans</a><a href="templates.html">Templates</a></div>
+      <div class="nav-group"><span class="nav-group-label">Workplace</span><a href="assign.html">Assignments</a><a href="import.html">Imports</a></div>
+      <div class="nav-group"><a href="people.html">People</a></div>
+    </nav>
+    <div class="topbar-end">
+      <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Switch light or dark theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <div class="user"><span class="avatar">MK</span><div class="user-meta"><b>Meera Kulkarni</b><span>Facilities Admin</span></div></div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <div class="crumbs"><a href="locations.html">Noida</a><span class="sep">/</span><a href="locations.html">Tower B</a><span class="sep">/</span><span>Floor 3</span></div>
+        <h1>Floor 3 plan</h1>
+        <p class="lede">One published revision is live at a time. Drafts are private to Facilities until published.</p>
+      </div>
+    </div>
+
+    <div class="lane">
+      <div>
+        <div class="current">
+          <section class="panel rev-card" aria-label="Published revision">
+            <div class="row"><span class="badge published">Published</span><span class="subtle" style="font-size:12.5px">since 14 Aug 2026</span></div>
+            <h2>r13</h2>
+            <p class="muted" style="font-size:13px">165 elements, 150 assignable spaces, published by Meera Kulkarni</p>
+            <div class="row"><a class="btn btn-sm" href="assign.html"><svg class="ico"><use href="#i-eye"/></svg> View with assignments</a><button class="btn btn-sm" disabled title="A draft already exists">Start a draft</button></div>
+          </section>
+          <section class="panel rev-card" aria-label="Draft revision">
+            <div class="row"><span class="badge draft">Draft</span><span class="subtle" style="font-size:12.5px">saved 3 min ago</span></div>
+            <h2>r14</h2>
+            <div class="diff"><span class="add">+1 added</span><span class="rem">−1 removed</span><span class="mov">0 moved</span><span class="subtle">vs r13</span></div>
+            <div class="lease"><span class="avatar">MK</span><div style="font-size:13px"><b>You hold the editor lease</b><br><span class="subtle">Renews while the editor is open</span></div></div>
+            <div class="callout crit" style="font-size:12.5px"><svg class="ico"><use href="#i-alert"/></svg><div>2 problems block publishing</div></div>
+            <div class="row"><a class="btn btn-sm btn-primary" href="editor.html">Continue editing</a><button class="btn btn-sm btn-ghost">Discard draft</button></div>
+          </section>
+        </div>
+
+        <section class="panel" aria-labelledby="h-all">
+          <div class="panel-head"><h2 id="h-all" style="font-size:16px">All revisions</h2></div>
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Revision</th><th>State</th><th>Changes</th><th>By</th><th>Published</th><th>Archived</th><th></th></tr></thead>
+              <tbody>
+                <tr><td class="mono">r14</td><td><span class="badge draft">Draft</span></td><td><span class="diff"><span class="add">+1</span><span class="rem">−1</span></span></td><td>Meera Kulkarni</td><td class="subtle">Not published</td><td></td><td><a href="editor.html">Edit</a></td></tr>
+                <tr><td class="mono">r13</td><td><span class="badge published">Published</span></td><td><span class="diff"><span class="add">+24</span><span class="mov">~6</span></span></td><td>Meera Kulkarni</td><td class="num">14 Aug 2026</td><td class="subtle">Live now</td><td><a href="assign.html">View</a></td></tr>
+                <tr><td class="mono">r12</td><td><span class="badge archived">Archived</span></td><td><span class="diff"><span class="rem">−8</span><span class="mov">~31</span></span></td><td>Arjun Menon</td><td class="num">2 Jun 2026</td><td class="num">14 Aug 2026</td><td><a href="#">View</a></td></tr>
+                <tr><td class="mono">r11</td><td><span class="badge archived">Archived</span></td><td><span class="diff"><span class="add">+48</span></span></td><td>Arjun Menon</td><td class="num">19 Mar 2026</td><td class="num">2 Jun 2026</td><td><a href="#">View</a></td></tr>
+                <tr><td class="mono">r10</td><td><span class="badge archived">Archived</span></td><td><span class="diff"><span class="mov">~4</span></span></td><td>Meera Kulkarni</td><td class="num">8 Jan 2026</td><td class="num">19 Mar 2026</td><td><a href="#">View</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel" aria-labelledby="h-rules">
+        <div class="panel-head"><h3 id="h-rules">How revisions work</h3></div>
+        <div class="panel-body">
+          <ul class="rule">
+            <li><svg class="ico"><use href="#i-layers"/></svg><span>Editing the published plan copies it into a new draft.</span></li>
+            <li><svg class="ico"><use href="#i-lock"/></svg><span>One person edits a draft at a time. If their lease expires, another Facilities Admin can take over; this is logged.</span></li>
+            <li><svg class="ico"><use href="#i-publish"/></svg><span>Publishing archives the current revision and makes the draft live in one step.</span></li>
+            <li><svg class="ico"><use href="#i-users"/></svg><span>Assignments follow each desk into the new revision. Removing an assigned desk blocks publishing.</span></li>
+            <li><svg class="ico"><use href="#i-history"/></svg><span>Archived revisions stay viewable and can’t be changed.</span></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <section class="panel" style="margin-top:20px" aria-labelledby="h-takeover">
+      <div class="panel-head"><h2 id="h-takeover" style="font-size:16px">Example: someone else’s lease has expired</h2><span class="badge plain">Floor 2, Draft r10</span></div>
+      <div class="panel-body">
+        <div class="callout warn"><svg class="ico"><use href="#i-lock"/></svg>
+          <div style="flex:1">Diya Nair was editing this draft until 11:42. Their lease expired 38 minutes ago and their last changes were saved. Taking over ends their session; they’ll see a notice if they come back.
+            <div class="row" style="margin-top:10px"><button class="btn btn-sm" onclick="DSKT.toast('Took over Draft r10. Recorded in the audit log.')">Take over editing</button><button class="btn btn-sm btn-ghost">Open read-only</button></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+<script src="assets/dskt.js"></script>
+</body>
+</html>

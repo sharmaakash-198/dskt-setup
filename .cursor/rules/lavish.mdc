@@ -1,0 +1,37 @@
+---
+description: Lavish is the default interactive alignment surface for human-agent collaboration
+alwaysApply: true
+---
+
+# Lavish = alignment workflow
+
+For planning, brainstorming, requirements, architecture, comparisons, reviews/explanations needing human feedback, approval checkpoints, and material direction changes before implementation in **DSKT**:
+
+1. **Read and follow** the project skill `.agents/skills/lavish/SKILL.md` (or invoke `/lavish`).
+2. If in Cursor Plan mode, request a switch to Agent mode before the checkpoint. Plan mode is read-only and cannot write or open Lavish artifacts. If switching is unavailable or rejected, report the limitation and continue alignment in chat.
+3. Create a focused HTML artifact under `.lavish/`, open with `npx -y lavish-axi`, and attach a **foreground, no-timeout** `npx -y lavish-axi poll <path>` by default. A harness-native tracked background job is allowed only when completion reliably resumes or notifies the same turn. Never use `nohup`, shell `&`, `disown`, or detached/untracked terminals for polling.
+4. Consume the full poll output, revise or `--agent-reply`, poll again until alignment ends.
+
+**Send To Agent** delivers feedback to the originating poll process — not to an arbitrary currently focused IDE chat.
+
+After an explicit conclusion, the agent may run `npx -y lavish-axi end <file>`. Agent-ended sessions reopen normally; user-ended sessions require an explicit request and `--reopen`.
+
+## Exemptions (skip Lavish)
+
+- Short factual answers
+- Routine progress and status updates
+- Urgent blocker or error reporting
+- Mechanical actions the human already approved
+- Explicit user opt-out
+
+## Tool boundaries
+
+| Tool | Use when |
+|------|----------|
+| **Lavish** | Iterative human feedback, annotation, or approval over HTML |
+| **Excalidraw** | Durable diagrams under `docs/diagrams/` |
+| **Cursor Canvas** | Standalone analytical deliverables with no review loop; Lavish takes precedence when iterative feedback, annotation, or approval is the purpose |
+| **chrome-agent** | Browser testing/debugging — not normal Lavish operation |
+| **ActiveGraph** | Final decisions and work memory after alignment concludes |
+
+Do not install Lavish's global plugin or hooks. Do not use `lavish-axi share` without explicit human approval.
