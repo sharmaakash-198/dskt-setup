@@ -27,6 +27,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-dskt}:${POSTGRES_PASSWORD:-dskt-local-only}@postgres:5432/${POSTGRES_DB:-dskt}
       CORS_ORIGIN: http://localhost:8080
       LOG_LEVEL: info
+      AUTH_ENV: local
+      SESSION_SECRET: ${SESSION_SECRET:-local-development-session-secret-32ch-min}
     ports:
       - "3000:3000"
     depends_on:
