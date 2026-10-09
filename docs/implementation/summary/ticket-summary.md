@@ -191,3 +191,87 @@ DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" \
 - **Docker:** rebuild compose images before browser demos.
 
 **Previous ticket summary:** Ticket 03 remains the authorization shell; Ticket 04 adds the access-administration operator surface on top.
+
+---
+
+# Summary of Changes — Ticket 05: Manage Sites
+
+**Ticket Reference:** `docs/implementation/mvp/tickets/05-manage-sites.md`  
+**Status:** Completed  
+**Repositories Involved:** `dskt-backend`, `dskt-frontend`, `dskt-setup`
+
+---
+
+## 1. Objective
+
+Allow a Facilities Admin to create, browse, update, and archive Arrise Sites, with Workplace Planner and Viewer read access to active Sites.
+
+---
+
+## 2. Acceptance Criteria Verification
+
+| Acceptance Criterion | Status | Verification Detail |
+|---|---|---|
+| FA creates Site with validated code, name, time zone, address | Verified | Zod + service validation; codes normalized uppercase; IANA time zones via `Intl`; optional address fields. |
+| Location view: order + loading/empty/validation/unavailable | Verified | Active sites ordered by code; `SitesPanel` covers loading, empty, conflict messages, unavailable. |
+| Unique codes with stable actionable errors | Verified | Org-scoped unique constraint; `409 { error: "site_code_taken" }`; UI maps to readable copy. |
+| Archive soft-deletes; blocks active buildings; no cascade | Verified | Sets `archived_at`; rejects with `site_has_active_buildings`; historical row retained. |
+| WP/Viewer read-only; FA mutates | Verified | Role matrix integration test including PATCH denial. |
+| Site archival audited | Verified | `audit_events` action `site.archived` with actor, target, correlation ID. |
+
+---
+
+## 3. Backend Changes (`dskt-backend`)
+
+- **Migration `drizzle/0003_sites.sql`:** `sites` and `buildings` (buildings for archive guard ahead of ticket 06).
+- **`src/sites/service.ts` + `routes.ts`:** `GET/POST /sites`, `PATCH /sites/:siteId`, `POST /sites/:siteId/archive`.
+- **`src/app.ts`:** registers site routes.
+- **Tests:** `test/sites.integration.test.ts` — full suite **36/36** pass.
+
+---
+
+## 4. Frontend Changes (`dskt-frontend`)
+
+- **`src/sites/`:** API wrappers + `SitesPanel` (create/list/edit/archive) with loading/empty/error states.
+- **`WorkspaceShell`:** mounts Sites panel for Facilities workspace.
+- OpenAPI client regenerated from backend contract.
+- **Results:** 18/18 frontend tests pass; lint / typecheck / openapi:check / build green.
+
+---
+
+## 5. How to verify
+
+Backend:
+
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+Frontend:
+
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+Migrate local DB before browser demo:
+
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm run migrate
+```
+
+---
+
+## 6. Context for Next Agent / Ticket
+
+- **Next:** 06 Manage Buildings and Floors (blocked by 05).
+- **Sites API:** FA mutate; WP/Viewer list; SysAdmin alone denied.
+- **Archive rule:** reject while active buildings remain; no cascading archive.
+- **Buildings table:** exists for guards; full building CRUD belongs to ticket 06.
+- **Docker:** rebuild compose images before browser demos on `:8080` / `:3000`.
+
+**Previous ticket summary:** Ticket 04 remains the access-admin surface; Ticket 05 starts the location hierarchy under Facilities.
+
