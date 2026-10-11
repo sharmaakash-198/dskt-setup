@@ -4,8 +4,7 @@ agent/skills/
 .claude/skills/
 
 # ActiveGraph local runtime and secrets
-.activegraph/data/
-.activegraph/.env
+.activegraph/
 
 # Harness MCP configs may contain bearer tokens
 .cursor/mcp.json
@@ -19,9 +18,11 @@ graphify-out/
 # Machine-local skill environments
 .agents/skills/excalidraw-diagram/references/.venv/
 
-# Independent nested application repositories
+# Independent nested application repositories (dirs or local symlinks)
 dskt-frontend/
 dskt-backend/
+/dskt-frontend
+/dskt-backend
 
 # Common local artifacts
 node_modules/
