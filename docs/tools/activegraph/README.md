@@ -25,14 +25,16 @@ Data is stored under `.activegraph/data/` and is gitignored.
 
 ## Prerequisites
 
-Clone and install [activegraph-packs](https://github.com/yoheinakajima/activegraph-packs):
+Clone and install [activegraph-packs](https://github.com/yoheinakajima/activegraph-packs). Preferred location for this repo (gitignored):
 
 ```bash
-git clone https://github.com/yoheinakajima/activegraph-packs ~/Local/activegraph-packs
-cd ~/Local/activegraph-packs
-pip install -e ".[dev]"
+git clone https://github.com/yoheinakajima/activegraph-packs .activegraph/vendor/activegraph-packs
+cd .activegraph/vendor/activegraph-packs
+pip install --user --break-system-packages -e ".[dev]"   # or a venv if python3-venv is available
 pnpm install
 ```
+
+Fallback: `~/Local/activegraph-packs` (or set `ACTIVEGRAPH_PACKS_ROOT`).
 
 Python 3.11+ and Node/pnpm are required for the Inspector stack.
 
@@ -40,11 +42,12 @@ Python 3.11+ and Node/pnpm are required for the Inspector stack.
 
 ```bash
 cp .activegraph/.env.example .activegraph/.env
-# Set DSKT_GITLAB_PROJECT and ACTIVEGRAPH_MCP_TOKENS
+# Set ACTIVEGRAPH_MCP_TOKENS / DSKT_ACTIVEGRAPH_TOKEN to a random secret
 chmod +x .activegraph/start.sh .activegraph/stop.sh
+cp .cursor/mcp.json.example .cursor/mcp.json   # paste the same bearer secret
 ```
 
-Configure the calling harness by following [mcp.md](mcp.md).
+Configure the calling harness by following [mcp.md](mcp.md). Reload MCP in Cursor after editing `.cursor/mcp.json`.
 
 ## Start and stop
 
@@ -54,11 +57,11 @@ From the repository root:
 ./.activegraph/start.sh
 ```
 
-Default services:
+Default services (local `.env.example` uses UI `3300` so it does not clash with `dskt-backend` on `3000`):
 
 | Service | URL |
 |---------|-----|
-| Inspector UI | http://localhost:3000 |
+| Inspector UI | http://localhost:3300 |
 | API server | http://localhost:8088 |
 | Python runtime and MCP | http://localhost:7788 |
 
