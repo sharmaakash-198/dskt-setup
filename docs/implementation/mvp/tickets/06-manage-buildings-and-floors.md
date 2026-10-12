@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 05 Manage Sites  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Facilities Admin to complete the location hierarchy by managing Building
 
 ## Acceptance criteria
 
-- [ ] Facilities Admin can create, update, browse, and archive Buildings under an active Site.
-- [ ] Facilities Admin can create, update, browse, and archive Floors under an active Building.
-- [ ] Codes are unique in their documented parent scope and conflicts return stable errors.
-- [ ] Archived parents cannot accept active children; archiving a Building with active Floors is rejected, and no archival operation deletes historical records or cascades implicitly.
-- [ ] Workplace Planner and Viewer can navigate active Buildings and Floors but cannot mutate them.
-- [ ] Building and Floor archival is audited.
+- [x] Facilities Admin can create, update, browse, and archive Buildings under an active Site.
+- [x] Facilities Admin can create, update, browse, and archive Floors under an active Building.
+- [x] Codes are unique in their documented parent scope and conflicts return stable errors.
+- [x] Archived parents cannot accept active children; archiving a Building with active Floors is rejected, and no archival operation deletes historical records or cascades implicitly.
+- [x] Workplace Planner and Viewer can navigate active Buildings and Floors but cannot mutate them.
+- [x] Building and Floor archival is audited.
 
 ## Verification
 

@@ -275,3 +275,90 @@ DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm run migra
 
 **Previous ticket summary:** Ticket 04 remains the access-admin surface; Ticket 05 starts the location hierarchy under Facilities.
 
+---
+
+# Summary of Changes — Ticket 06: Manage Buildings and Floors
+
+**Ticket Reference:** `docs/implementation/mvp/tickets/06-manage-buildings-and-floors.md`  
+**Status:** Completed  
+**Repositories Involved:** `dskt-backend`, `dskt-frontend`, `dskt-setup`
+
+---
+
+## 1. Objective
+
+Allow a Facilities Admin to complete the location hierarchy by managing Buildings under Sites and Floors under Buildings, with Workplace Planner and Viewer read-only navigation to an empty Floor workspace.
+
+---
+
+## 2. Acceptance Criteria Verification
+
+| Acceptance Criterion | Status | Verification Detail |
+|---|---|---|
+| FA create/update/browse/archive Buildings under active Site | Verified | HTTP CRUD under `/sites/:siteId/buildings` and `/buildings/:id`; UI BuildingsPanel. |
+| FA create/update/browse/archive Floors under active Building | Verified | HTTP CRUD under `/buildings/:buildingId/floors` and `/floors/:id`; UI FloorsPanel. |
+| Codes unique in parent scope with stable errors | Verified | Unique `(site_id, code)` / `(building_id, code)`; `409 building_code_taken` / `floor_code_taken`. |
+| Archived parents reject children; building archive blocked by active floors; no cascade delete | Verified | `site_archived` / `building_archived` / `building_has_active_floors`; soft archive retains rows. |
+| WP/Viewer navigate but cannot mutate | Verified | Role matrix integration test; UI `canMutate` only in Facilities workspace for FA. |
+| Building and Floor archival audited | Verified | `audit_events` actions `building.archived` and `floor.archived`. |
+
+---
+
+## 3. Backend Changes (`dskt-backend`)
+
+- **Migration `drizzle/0004_floors.sql`:** `floors` table with unique code per building.
+- **`src/buildings/service.ts` + `routes.ts`:** list/create/update/archive buildings.
+- **`src/floors/service.ts` + `routes.ts`:** list/create/update/archive floors.
+- **`src/app.ts`:** registers building and floor routes.
+- **Tests:** `test/buildings-floors.integration.test.ts` — suite included in **39/39** backend tests pass.
+
+---
+
+## 4. Frontend Changes (`dskt-frontend`)
+
+- **`src/buildings/`** and **`src/floors/`:** API wrappers, BuildingsPanel, FloorsPanel, FloorWorkspace (empty floor state).
+- **`SitesPanel`:** Site → Building → Floor drill-down navigation.
+- **`WorkspaceShell`:** location hierarchy for facilities/workplace/viewer; mutate only in Facilities for FA.
+- OpenAPI client regenerated from backend contract.
+- **Results:** 36/36 frontend tests pass; lint / typecheck / openapi:check / build green.
+
+---
+
+## 5. How to verify
+
+Backend:
+
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+Frontend:
+
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+Migrate local DB before browser demo:
+
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm run migrate
+```
+
+Browser: Facilities Admin → open buildings on a Site → create Building → open floors → create Floor → Open floor → empty Floor workspace.
+
+---
+
+## 6. Context for Next Agent / Ticket
+
+- **Next:** check plan/tickets for remaining Wave 4 items (e.g. 07 Create Template identity; 21 Preview Employee workbook) or other unblocked tickets.
+- **API shape:** nested list/create under parent; PATCH/archive on resource id.
+- **Archive rule:** reject building archive while active floors remain; no cascading archive.
+- **UI:** FloorWorkspace is intentionally empty until floor-plan tickets.
+- **Docker:** rebuild compose images before browser demos on `:8080` / `:3000`.
+
+**Previous ticket summary:** Ticket 05 delivered Sites; Ticket 06 completes Site → Building → Floor hierarchy management.
+
