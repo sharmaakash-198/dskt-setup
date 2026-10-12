@@ -373,3 +373,14 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in each app repo; `npm run migrate` before browser demo.
 - **Next:** e.g. 21 Preview Employee workbook, or geometry-revision tickets once unblocked.
 
+---
+
+# Ticket 08 — Create an immutable Template Revision
+
+**Ticket:** `docs/implementation/mvp/tickets/08-create-immutable-template-revision.md` — completed
+
+- **Backend:** `0006_template_revisions.sql`; `src/geometry/orthogonal.ts`; create/list revisions under `/element-templates/:id/revisions` (not set current); 48 backend tests pass.
+- **Frontend:** `RevisionComposer` with snap/scale, dimensions, accessible summary; catalog lists revisions as not current.
+- **Verify:** migrate + test/lint/typecheck/openapi/build in both apps.
+- **Next:** 09 diagnose invalid geometry; 11 draft floor plan; 21 employee workbook.
+
