@@ -362,3 +362,14 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 
 **Previous ticket summary:** Ticket 05 delivered Sites; Ticket 06 completes Site → Building → Floor hierarchy management.
 
+---
+
+# Ticket 07 — Create a Template identity
+
+**Ticket:** `docs/implementation/mvp/tickets/07-create-template-identity.md` — completed
+
+- **Backend:** migration `0005_element_templates.sql`; `src/templates/` categories + template identity (`currentRevisionId: null`, `placeable: false`); HTTP tests in `test/templates.integration.test.ts` (41 backend tests pass).
+- **Frontend:** `src/templates/TemplatesCatalog` (create/order/archive categories, create templates; read-only for WP/Viewer); OpenAPI client regenerated (40 frontend tests pass).
+- **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in each app repo; `npm run migrate` before browser demo.
+- **Next:** e.g. 21 Preview Employee workbook, or geometry-revision tickets once unblocked.
+
