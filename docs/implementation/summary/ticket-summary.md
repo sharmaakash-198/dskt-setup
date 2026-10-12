@@ -384,3 +384,14 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Verify:** migrate + test/lint/typecheck/openapi/build in both apps.
 - **Next:** 09 diagnose invalid geometry; 11 draft floor plan; 21 employee workbook.
 
+---
+
+# Ticket 09 — Diagnose invalid Template geometry
+
+**Ticket:** `docs/implementation/mvp/tickets/09-diagnose-invalid-template-geometry.md` — completed
+
+- **Backend:** `diagnoseOrthogonalPolygon` in `src/geometry/orthogonal.ts` returns stable codes + vertex/edge indexes; create revision responds `400 invalid_geometry` with `diagnostics[]` and creates no rows (50 backend tests).
+- **Frontend:** advisory diagnose in `geometry.ts`; `RevisionComposer` lists diagnostics, focuses affected vertex (`aria-current`), still trusts server on submit; OpenAPI client updated (45 frontend tests).
+- **Verify:** migrate + test/lint/typecheck/openapi/build in both apps.
+- **Next:** 10 activate and revise template; 11 draft floor plan; 21 employee workbook.
+

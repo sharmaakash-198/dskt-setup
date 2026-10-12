@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 08 Create an immutable Template Revision  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Give a Facilities Admin authoritative, entity-linked diagnostics when proposed T
 
 ## Acceptance criteria
 
-- [ ] Validation covers 4–100 vertices, integer coordinates, orthogonality, simplicity, anticlockwise orientation, implicit closure, and repeated vertices.
-- [ ] The backend returns stable error codes and identifies the relevant vertex or edge where practical.
-- [ ] Frontend advisory validation appears during editing but never replaces backend validation.
-- [ ] Errors are listed in accessible HTML and selecting an error focuses or highlights the affected geometry without relying on color alone.
-- [ ] Invalid input creates no Template Revision or vertex rows.
-- [ ] Valid geometry produces a clear ready state without silently changing submitted coordinates beyond documented normalization.
+- [x] Validation covers 4–100 vertices, integer coordinates, orthogonality, simplicity, anticlockwise orientation, implicit closure, and repeated vertices.
+- [x] The backend returns stable error codes and identifies the relevant vertex or edge where practical.
+- [x] Frontend advisory validation appears during editing but never replaces backend validation.
+- [x] Errors are listed in accessible HTML and selecting an error focuses or highlights the affected geometry without relying on color alone.
+- [x] Invalid input creates no Template Revision or vertex rows.
+- [x] Valid geometry produces a clear ready state without silently changing submitted coordinates beyond documented normalization.
 
 ## Verification
 
