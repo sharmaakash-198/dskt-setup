@@ -539,5 +539,237 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Next:** 17 publish floor plan; 18 floor plan revision history; 21 employee workbook.
 
 
+------------------------
+
+### ticket 20
+
+Ticket 20 has been implemented and fully verified across both dskt-backend and dskt-   
+  frontend.                                                                              
+  ──────                                                                                 
+  ### Acceptance Criteria Verification                                                   
+                                                                                         
+   Acceptance Criterion                 │ Status │ Verification Summary
+  ──────────────────────────────────────┼────────┼───────────────────────────────────────
+   1. Facilities Admin, Workplace       │ Passed │ GET /floors/:floorId/floor-plan/publi
+   Planner, and Viewer can open current │        │ shed and
+   Published map                        │        │ GET /floors/:floorId/floor-plan allow
+                                        │        │ Facilities Admin, Workplace Planner,
+                                        │        │ and Viewer roles to fetch the current
+                                        │        │ published floor plan projection.
+   2. Shared renderer displays          │ Passed │ BoundaryEditor renders the boundary
+   immutable boundary and all Placed    │        │ polygon and all placed spaces in
+   Element classes with accessible      │        │ strict layer order (ZONE → OBSTACLE →
+   details                              │        │ PHYSICAL). Clicking any space opens
+                                        │        │ the accessible Details Panel showing
+                                        │        │ template revision, spatial class,
+                                        │        │ coordinates, rotation, and
+                                        │        │ assignability.
+   3. No editing controls or mutation   │ Passed │ When viewing the published map,
+   endpoints in Published experience    │        │ editing controls (scale selector,
+                                        │        │ undo/redo, autosave badge,
+                                        │        │ validate/publish buttons, catalog
+                                        │        │ palette, add vertex form, save
+                                        │        │ boundary button, transform and delete
+                                        │        │ forms) are strictly omitted from the
+                                        │        │ DOM. Non-facilities requests to
+                                        │        │ mutation endpoints return 403
+                                        │        │ Forbidden.
+   4. Facilities Admin can inspect      │ Passed │ listRevisions filters out non-
+   Draft/Archived metadata; Planner and │        │ published revisions for non-
+   Viewer denied Draft geometry         │        │ facilities callers. getRevision
+                                        │        │ returns 403 Forbidden if a non-
+                                        │        │ facilities caller requests a DRAFT or
+                                        │        │ ARCHIVED revision. Facilities Admin
+                                        │        │ can switch between Draft Editor and
+                                        │        │ Published Map via UI tabs.
+   5. Explicit empty, unpublished,      │ Passed │ FloorWorkspace handles all 5 explicit
+   archived-location, loading, and      │        │ states with dedicated test IDs:
+   unavailable states                   │        │ loading-state, empty-floor-plan,
+                                        │        │ unpublished-floor-plan, archived-
+                                        │        │ location-state, and unavailable-state
+                                        │        │ (with Retry action).
+   6. API projections avoid exposing    │ Passed │ Projection views expose only floor
+   unnecessary employee or historical   │        │ plan revision geometry and placement
+   data                                 │        │ identity without leaking user
+                                        │        │ assignments or historical audit
+                                        │        │ trails.
+  ──────                                                                                 
+  ### Changes Summary                                                                    
+                                                                                         
+  #### 1. Backend (dskt-backend)                                                         
+                                                                                         
+  • **service.ts**:                                                                      
+      • Added error codes: 'building_archived', 'site_archived',                         
+      'published_revision_not_found', 'forbidden'.                                       
+      • Updated requireActiveFloor to join buildings and sites, checking for archived    
+      parent entities (floor_archived, building_archived, site_archived).                
+      • Added getPublishedFloorPlan(floorId) returning { floorPlan, revision } or 404    
+      published_revision_not_found.                                                      
+      • Updated getFloorPlan and listRevisions to project published revision data for    
+      Workplace Planner and Viewer callers while omitting draft geometry.                
+      • Enforced 403 Forbidden in getRevision for non-Facilities Admin trying to access  
+      DRAFT or ARCHIVED revisions.                                                       
+  • **routes.ts**:                                                                       
+      • Added requireReader = requireAnyRole('FACILITIES_ADMIN', 'WORKPLACE_PLANNER',    
+      'VIEWER').                                                                         
+      • Added GET /floors/:floorId/floor-plan/published protected by requireReader.      
+      • Updated GET /floors/:floorId/floor-plan, GET /floors/:floorId/floor-             
+      plan/revisions, and GET /floors/:floorId/floor-plan/revisions/:revisionId to accept
+      requireReader and pass request.principal.                                          
+      • Regenerated openapi.json.                                                        
+  • **browse-published-maps.integration.test.ts**:                                       
+      • 5 integration test suites verifying role matrix, Draft/Archived 403 denial,      
+      published map retrieval with all element classes, explicit states, and mutation    
+      endpoint denial for Workplace Planner and Viewer.                                  
+  • **floor-plans.integration.test.ts**:                                                 
+      • Updated assertions to reflect Ticket 20 projected published read permissions for 
+      Workplace Planner and Viewer.                                                      
+                                                                                         
+                                                                                         
+  #### 2. Frontend (dskt-frontend)                                                       
+                                                                                         
+  • **dskt-backend.openapi.json & schema.ts**: Synced OpenAPI specification from backend.
+  • **floor-plan-api.ts**:                                                               
+      • Added building_archived, site_archived, published_revision_not_found error copy. 
+      • Updated getFloorPlan return type for publishedRevision and errorCode.            
+      • Added getPublishedFloorPlan(client, floorId).                                    
+      • Updated listFloorPlanRevisions to return errorCode.                              
+  • **BoundaryEditor.tsx**:                                                              
+      • Hid "Editing Scale" select dropdown in toolbar when revision.lifecycleState ===  
+      'PUBLISHED' or !canMutate (toolbar displays only Zoom and Pan controls).           
+      • Ensured all mutation forms, drag/drop placement, autosave, undo/redo, and        
+      validate/publish buttons are strictly hidden in read-only / published mode.        
+      • Preserved accessible element details display when clicking placed spaces on the  
+      published map.                                                                     
+  • **FloorWorkspace.tsx**:                                                              
+      • Implemented the 5 explicit states: loading-state, empty-floor-plan, unpublished- 
+      floor-plan, archived-location-state, and unavailable-state (with Retry action).    
+      • For Workplace Planner and Viewer: strictly renders publishedRevision via shared  
+      BoundaryEditor with canMutate={false} and no editing controls.                     
+      • For Facilities Admin: provides tabs to switch between Draft Editor and Published 
+      Map when both exist or draft exists.                                               
+      • Displays Revision History cards for all permitted revisions.                     
+  • **FloorWorkspace.test.tsx**:                                                         
+      • Added 6 new integration tests verifying:                                         
+          1. Opening Published map with shared renderer and all element classes (ZONE,   
+          PHYSICAL, OBSTACLE) for non-facilities roles.                                  
+          2. Strictly hiding all editing controls in Published experience.               
+          3. Facilities Admin switching between Draft Editor and Published Map.          
+          4. Explicit unpublished state for viewers when draft exists without publication.
+          5. Explicit archived-location state when floor/building/site is archived.      
+          6. Explicit unavailable state when network/server error occurs.                
+                                                                                         
+  • **SitesPanel.test.tsx**: Handled /floor-plan path in route mock before /floors       
+  wildcard so floor workspace tests pass cleanly.                                        
+                                                                                         
+  #### 3. Documentation                                                                  
+                                                                                         
+  • **20-browse-published-maps-and-history.md**: Checked all acceptance criteria and     
+  marked Status: completed.                                                              
+  • **ticket-summary.md**: Appended Ticket 20 summary section with verification          
+  instructions and context for Ticket 21 while preserving all prior summaries.           
+  ──────                                                                                 
+  ### Verification Results                                                               
+                                                                                         
+  • dskt-backend:                                                                        
+    DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm test && npm   
+  run lint && npm run typecheck && npm run openapi:check && npm run build                
+                                                                                         
+      • Test Files: 20 passed (20)                                                       
+      • Tests: 108 passed (108)                                                          
+      • Lint / Typecheck / OpenAPI / Build: Clean (exit code 0)                          
+  • dskt-frontend:                                                                       
+    npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run    
+  build                                                                                  
+                                                                                         
+      • Test Files: 13 passed (13)                                                       
+      • Tests: 98 passed (98)                                                            
+      • Lint / Typecheck / OpenAPI / Build: Clean (exit code 0)     
 
 
+----------------------
+
+
+ ###   Ticket 21  Implementation                                                                                                                                                               
+ 1. Database Schema & Migrations (dskt-backend):                                        
+      • Added tables in schema.ts:                                                       
+          • departments (id, code, name, active)                                         
+          • teams (id, department_id, code, name, active)                                
+          • employees (id, employee_id unique external key, full_name, email,            
+          manager_employee_id, team_id, department_id, preferred_site_id, job_title,     
+          employment_status, active, last_import_id)                                     
+          • employee_imports (id, uploaded_by_user_id, original_filename, file_sha256,   
+          status, total_rows, valid_rows, invalid_rows, created_at, applied_at)          
+          • employee_import_rows (discrete relational staging columns mirroring accepted 
+          columns: employee_id, full_name, email, employment_status, manager_employee_id,
+          team_code, team_name, department_code, department_name, preferred_site_code,   
+          job_title, active, action, is_valid — strictly no JSONB or generic payload     
+          columns)                                                                       
+          • employee_import_row_errors (id, employee_import_row_id, column_name,         
+          error_code, message)                                                           
+      • Created and applied migration 0012_employee_imports.sql and updated _journal.json.
+  2. Workforce Backend Service & Routes (dskt-backend):                                  
+      • Installed @fastify/multipart and exceljs.                                        
+      • Created service.ts:                                                              
+          • Validates .xlsx extension, bounds file size to 5 MB, and limits rows to 5,000.
+          • Computes SHA-256 hash.                                                       
+          • Rejects macro-enabled workbooks (.xlsm or vbaProject.bin) and cell formulas  
+          (flags FORMULA_NOT_PERMITTED without executing).                               
+          • Validates required headers (Employee ID, Full Name, Employment Status), email
+          format, and resolves preferred_site_code against active sites.                 
+          • Detects duplicate workbook employee_id values, self-manager references,      
+          unresolved managers, and cyclic manager relationships.                         
+          • Classifies valid rows against existing employees records: CREATE, UPDATE, or 
+          UNCHANGED.                                                                     
+          • Flags validation failures as INVALID with relational staging errors.         
+          • Inserts relational staging rows and import summary metadata without touching 
+          employees, departments, or teams domain tables.                                
+          • Logs only safe metadata (importId, fileSha256, row counts), strictly omitting
+          personal data, cell values, and file contents.                                 
+      • Created routes.ts:                                                               
+          • POST /employee-imports/preview (multipart file upload, WORKPLACE_PLANNER     
+          authorized)                                                                    
+          • GET /employee-imports/:importId                                              
+          • GET /employee-imports/:importId/rows (with action filtering and pagination)  
+      • Registered routes and multipart in app.ts.                                       
+      • Regenerated openapi.json.                                                        
+  3. Frontend Implementation (dskt-frontend):                                            
+      • Synced OpenAPI contract and regenerated schema.ts.                               
+      • Created api.ts for workbook upload and staging queries.                          
+      • Built EmployeeImportPanel.tsx:                                                   
+          • Excel workbook upload dropzone with bounded file instructions and explicit   
+          notice that no domain rows are altered.                                        
+          • Summary counters for total rows, proposed creates, proposed updates,         
+          unchanged rows, and invalid rows.                                              
+          • Actionable filter tabs (All, Creates, Updates, Unchanged, Invalid).          
+          • Staging rows table with action tags and diagnostic error pills.              
+      • Wired EmployeeImportPanel into WorkspaceShell.tsx for Workplace Planners.        
+      • Added styles in styles.css.                                                      
+  4. Testing & Verification:                                                             
+      • Backend integration tests in employee-import-preview.integration.test.ts:        
+          • Role matrix (Workplace Planner 200, Facilities Admin 403, Viewer 403, System 
+          Admin 403, unauthenticated 401).                                               
+          • File bounds, macro rejection, corrupted files, and missing headers.          
+          • Cell formula rejection and relational staging with 0 JSONB columns.          
+          • Classification of CREATE, UPDATE, UNCHANGED, and INVALID rows.               
+          • Verified domain tables remain completely unchanged during preview.           
+      • Frontend component tests in EmployeeImportPanel.test.tsx.                        
+      • All backend tests (21 test files, 112 tests) and frontend tests (14 test files,  
+      102 tests) pass with 0 errors.                                                     
+      • Updated 21-preview-employee-workbook.md to Status: completed.                    
+      • Appended Ticket 21 summary and instructions for Ticket 22 to ticket-summary.md.  
+                                                                                         
+  ──────                                                                                 
+  ### How to Verify                                                                      
+                                                                                         
+  Backend:                                                                               
+                                                                                         
+    cd dskt-backend                                                                      
+    DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm test          
+    npm run lint && npm run typecheck && npm run openapi:check && npm run build          
+                                                                                         
+  Frontend:                                                                              
+                                                                                         
+    cd dskt-frontend                                                                     
+    npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run    
+  build                                                                                  
