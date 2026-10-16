@@ -395,3 +395,13 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Verify:** migrate + test/lint/typecheck/openapi/build in both apps.
 - **Next:** 10 activate and revise template; 11 draft floor plan; 21 employee workbook.
 
+---
+
+# Ticket 10 — Activate and revise a Template
+
+**Ticket:** `docs/implementation/mvp/tickets/10-activate-and-revise-template.md` — completed
+
+- **Backend:** `PUT /element-templates/:id/current-revision` (via `setTemplateCurrentRevision` in `src/templates/service.ts`, routes in `src/templates/routes.ts`); transactional activation validating template ownership, serializes concurrent activations, keeps existing placement pinning, denies activation to unauthorized roles; 55 backend tests pass.
+- **Frontend:** `TemplatesCatalog.tsx` distinguishes current revisions with badge, allows Facilities Admins to activate revisions as current via `activateTemplateRevision` API, supports read-only revision history view; OpenAPI client updated; 47 frontend tests pass.
+- **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
+- **Next:** 11 create draft floor plan; 21 employee workbook.

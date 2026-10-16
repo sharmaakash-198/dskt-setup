@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 09 Diagnose invalid Template geometry  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,13 +10,13 @@ Allow a Facilities Admin to select an immutable Template Revision as current for
 
 ## Acceptance criteria
 
-- [ ] Only a valid immutable revision belonging to the Template can become its current revision.
-- [ ] Changing `current_revision_id` is transactional and fails without changing the prior current revision.
-- [ ] Current revision selection never mutates revision metadata, geometry, or ordered vertices.
-- [ ] A later revision receives the next revision number and is created through the same atomic validated flow.
-- [ ] Activating the later revision affects only future placements.
-- [ ] Existing Placed Elements remain pinned to the Template Revision they originally used.
-- [ ] The catalog distinguishes the current revision and supports read-only revision history.
+- [x] Only a valid immutable revision belonging to the Template can become its current revision.
+- [x] Changing `current_revision_id` is transactional and fails without changing the prior current revision.
+- [x] Current revision selection never mutates revision metadata, geometry, or ordered vertices.
+- [x] A later revision receives the next revision number and is created through the same atomic validated flow.
+- [x] Activating the later revision affects only future placements.
+- [x] Existing Placed Elements remain pinned to the Template Revision they originally used.
+- [x] The catalog distinguishes the current revision and supports read-only revision history.
 
 ## Verification
 
