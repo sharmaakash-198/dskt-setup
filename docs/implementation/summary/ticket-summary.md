@@ -415,3 +415,13 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Frontend:** `src/floors/floor-plan-api.ts`, `src/floors/FloorWorkspace.tsx` (create draft floor plan from empty floor with scale selector, revision history distinguishing Draft, Published, and Archived states, read-only guard for non-facilities); OpenAPI client regenerated; 50 frontend tests pass.
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
 - **Next:** 12 edit floor boundary; 21 employee workbook.
+---
+
+# Ticket 12 — Edit a Floor Boundary
+
+**Ticket:** `docs/implementation/mvp/tickets/12-edit-floor-boundary.md` — completed
+
+- **Backend:** migration `0008_floor_boundaries.sql` (`floor_plan_revision_boundary_vertices`); `src/floor-plans/service.ts`, `src/floor-plans/routes.ts` (`PUT /floors/:floorId/floor-plan/revisions/:revisionId/boundary`, `PATCH /floors/:floorId/floor-plan/revisions/:revisionId/scale`); orthogonal polygon boundary validation in integer world units (1 unit = 10 cm), implicit closure, permitted `2ⁿ` editing scale (1..256), scale update preserving stored physical geometry, state check (Draft only), optimistic concurrency check (`concurrencyVersion` increment), Facilities Admin authorization guard; HTTP tests in `test/floor-boundaries.integration.test.ts` (63 backend tests pass).
+- **Frontend:** `src/floors/BoundaryEditor.tsx`, `src/floors/FloorWorkspace.tsx`, `src/floors/floor-plan-api.ts`; interactive boundary canvas with scale-zoom separation (zoom/pan change only viewport, preserving domain world coordinates), live dimensions and coordinate feedback, accessible HTML summary, orthogonality guidance diagnostics, vertex editing with grid snapping, and boundary saving with concurrency version tracking; OpenAPI client regenerated; 55 frontend tests pass.
+- **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
+- **Next:** 13 place physical space; 21 employee workbook.

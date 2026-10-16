@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 11 Create a Draft Floor Plan  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Facilities Admin to draw and edit the Draft Floor Boundary in integer wo
 
 ## Acceptance criteria
 
-- [ ] The boundary uses normalized ordered integer vertices in 10-centimetre world units and implicit closure.
-- [ ] Editing Scale accepts only `1,2,4,8,16,32,64,128,256`.
-- [ ] Changing Editing Scale changes editing granularity but never stored physical geometry.
-- [ ] Zoom and pan change only the viewport and cannot mutate domain coordinates.
-- [ ] Orthogonality guidance, dimensions, coordinate feedback, and an accessible HTML summary are available.
-- [ ] Backend commands reject edits to non-Draft revisions and stale concurrency versions.
+- [x] The boundary uses normalized ordered integer vertices in 10-centimetre world units and implicit closure.
+- [x] Editing Scale accepts only `1,2,4,8,16,32,64,128,256`.
+- [x] Changing Editing Scale changes editing granularity but never stored physical geometry.
+- [x] Zoom and pan change only the viewport and cannot mutate domain coordinates.
+- [x] Orthogonality guidance, dimensions, coordinate feedback, and an accessible HTML summary are available.
+- [x] Backend commands reject edits to non-Draft revisions and stale concurrency versions.
 
 ## Verification
 
