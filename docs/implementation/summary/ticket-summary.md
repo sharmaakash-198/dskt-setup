@@ -405,3 +405,13 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Frontend:** `TemplatesCatalog.tsx` distinguishes current revisions with badge, allows Facilities Admins to activate revisions as current via `activateTemplateRevision` API, supports read-only revision history view; OpenAPI client updated; 47 frontend tests pass.
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
 - **Next:** 11 create draft floor plan; 21 employee workbook.
+---
+
+# Ticket 11 — Create a Draft Floor Plan
+
+**Ticket:** `docs/implementation/mvp/tickets/11-create-draft-floor-plan.md` — completed
+
+- **Backend:** migration `0007_floor_plans.sql`; `src/floor-plans/service.ts`, `src/floor-plans/routes.ts`; unique floor plan identity per floor, revision 1 in Draft state with permitted `2ⁿ` editing scale (1..256) and non-negative concurrency version, idempotent retry with matching key, empty floor handling, Facilities Admin authorization guard; HTTP tests in `test/floor-plans.integration.test.ts` (59 backend tests pass).
+- **Frontend:** `src/floors/floor-plan-api.ts`, `src/floors/FloorWorkspace.tsx` (create draft floor plan from empty floor with scale selector, revision history distinguishing Draft, Published, and Archived states, read-only guard for non-facilities); OpenAPI client regenerated; 50 frontend tests pass.
+- **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
+- **Next:** 12 edit floor boundary; 21 employee workbook.

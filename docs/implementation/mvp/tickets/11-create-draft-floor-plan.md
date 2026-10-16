@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 06 Manage Buildings and Floors  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Facilities Admin to create the stable Floor Plan identity for a Floor an
 
 ## Acceptance criteria
 
-- [ ] A Floor can have at most one Floor Plan identity.
-- [ ] Creation produces revision 1 in Draft state with a permitted `2ⁿ` Editing Scale and non-negative concurrency version.
-- [ ] The revision list clearly distinguishes Draft, Published, and Archived states and handles an empty Floor.
-- [ ] Only Facilities Admin can create or read Draft Floor Plan details.
-- [ ] Repeated retry with the same idempotency key does not create duplicate plans or revisions.
-- [ ] No geometry is encoded in viewport or screen coordinates.
+- [x] A Floor can have at most one Floor Plan identity.
+- [x] Creation produces revision 1 in Draft state with a permitted `2ⁿ` Editing Scale and non-negative concurrency version.
+- [x] The revision list clearly distinguishes Draft, Published, and Archived states and handles an empty Floor.
+- [x] Only Facilities Admin can create or read Draft Floor Plan details.
+- [x] Repeated retry with the same idempotency key does not create duplicate plans or revisions.
+- [x] No geometry is encoded in viewport or screen coordinates.
 
 ## Verification
 
