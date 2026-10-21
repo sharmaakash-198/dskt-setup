@@ -425,3 +425,119 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Frontend:** `src/floors/BoundaryEditor.tsx`, `src/floors/FloorWorkspace.tsx`, `src/floors/floor-plan-api.ts`; interactive boundary canvas with scale-zoom separation (zoom/pan change only viewport, preserving domain world coordinates), live dimensions and coordinate feedback, accessible HTML summary, orthogonality guidance diagnostics, vertex editing with grid snapping, and boundary saving with concurrency version tracking; OpenAPI client regenerated; 55 frontend tests pass.
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
 - **Next:** 13 place physical space; 21 employee workbook.
+---
+
+# Ticket 13 — Place a Physical Space
+
+**Ticket:** `docs/implementation/mvp/tickets/13-place-physical-space.md` — completed
+
+- **Backend:**
+  - Migration `0009_placed_elements.sql`: created `placement_identities` (stable identity per floor plan) and `placed_elements` (revision-specific placement records pinned to `element_template_revisions`, with rotation degrees 0/90/180/270 and integer world coordinates).
+  - Geometry Seam: Added orthogonal spatial predicates in `src/geometry/orthogonal.ts` (`transformVertices`, `isPointInsideOrOnPolygon`, `isPointStrictlyInsidePolygon`, `segmentsCrossProperly`, `isPolygonInsideBoundary`, `doPolygonsOverlap`).
+  - Service & API: Implemented `placeElement` and `listPlacements` in `src/floor-plans/service.ts`, exposed routes `POST /floors/:floorId/floor-plan/revisions/:revisionId/placements` and `GET /floors/:floorId/floor-plan/revisions/:revisionId/placements` in `src/floor-plans/routes.ts`.
+  - Validation: Validates caller permission (Facilities Admin), floor plan draft lifecycle state, physical template spatial class (`PHYSICAL`), active current template revision, floor boundary containment, and non-overlapping collision against physical/obstacle spaces. Collinear adjacent boundary contacts are cleanly permitted while interior overlaps and out-of-boundary positions are rejected.
+  - Tests: Added comprehensive unit tests in `test/geometry.orthogonal.test.ts` and integration tests in `test/placements.integration.test.ts` (68 backend tests pass).
+- **Frontend:**
+  - OpenAPI: Regenerated TypeScript client schemas (`src/api/schema.ts`).
+  - API Client: Added `createPlacedElement` and `listPlacedElements` in `src/floors/floor-plan-api.ts`.
+  - Geometry Helpers: Implemented transform, containment, and collision checking in `src/templates/geometry.ts` with unit tests in `src/templates/geometry.test.ts`.
+  - Boundary Editor:
+    - Added catalog palette displaying only active, unarchived physical templates with current revisions.
+    - Drag & drop over floor plan canvas with editing-scale grid snapping.
+    - Real-time snapped preview distinguishing invalid positions without relying on color alone (diagonal hatch pattern `url(#invalid-hatch)`, warning badge/symbol, and accessible `role="status"` live region).
+    - Commit placement creates stable identity and revision-pinned placed space.
+    - Shared SVG renderer displays placed spaces using polygon vertices and labels.
+    - Accessible manual placement form and placed spaces summary list.
+  - Tests: Added unit and interaction tests in `src/floors/BoundaryEditor.test.tsx` (61 frontend tests pass).
+- **Verify:**
+  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all clean).
+  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all clean).
+- **Next:** 14 transform placed spaces; 15 place zones and obstacles; 21 employee workbook.
+---
+
+# Ticket 14 — Transform Placed Spaces
+
+**Ticket:** `docs/implementation/mvp/tickets/14-transform-placed-spaces.md` — completed
+
+- **Backend:**
+  - Placed element projection: Added `templateRevisionNumber` and `assignable` to `PlacedElementView` and OpenAPI schema.
+  - Transformation & Removal API:
+    - Implemented `updatePlacement` and `deletePlacement` in `src/floor-plans/service.ts`.
+    - Added `PATCH /floors/:floorId/floor-plan/revisions/:revisionId/placements/:placementId` (validating draft lifecycle state, integer world coordinates, quarter-turn rotation `0 | 90 | 180 | 270`, boundary containment, collision prevention, and optimistic concurrency). Strict schema validation forbids any resize parameters (width, height, vertices, scale).
+    - Added `DELETE /floors/:floorId/floor-plan/revisions/:revisionId/placements/:placementId` (deletes from draft `placed_elements` revision while strictly preserving the stable `placement_identities` record and historical revisions, with optimistic concurrency check).
+  - Verification & Tests:
+    - Added 5 quarter-turn property tests in `test/geometry.orthogonal.test.ts` (4 consecutive 90° rotations identity, inverse angle round-trip, arbitrary integer translation + rotation round-trip, segment length preservation, and shoelace area invariance).
+    - Added HTTP integration tests in `test/placements.integration.test.ts` covering translation, quarter-turns, invalid rotation rejection (400), resize attempt rejection (400), concurrency conflicts (409), draft deletion, and database identity preservation (74 backend tests pass).
+- **Frontend:**
+  - OpenAPI: Synced backend OpenAPI spec to `openapi/dskt-backend.openapi.json` and generated `src/api/schema.ts`.
+  - Client API: Added `updatePlacedElement` and `deletePlacedElement` in `src/floors/floor-plan-api.ts`.
+  - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
+    - Selection: Clicking on an SVG placed space or choosing from the Placed Spaces list selects the space with visual dashed highlight and opens the accessible Details Panel.
+    - Details Panel: Displays Template Revision, spatial class, coordinates (world units and cm), quarter-turn rotation, assignability, and validation state.
+    - Translation & Rotation Controls: Inputs for integer world coordinates snapping to active editing scale, and `↺ 90° CCW` / `↻ 90° CW` quarter-turn rotation buttons.
+    - Transform Preview: Real-time responsive preview distinguishing invalid coordinates using diagonal SVG hatch pattern (`url(#invalid-hatch)`), warning symbol (`⚠ Invalid`), and live region alert without relying on color alone, disabling "Save Transform" until valid.
+    - Removal: "Remove from Draft" button deletes placement from current draft revision and increments revision concurrency version.
+  - Tests: Added interaction tests in `src/floors/BoundaryEditor.test.tsx` verifying selection details, live transform previews, quarter-turn rotation, removal, and concurrency version updates (65 frontend tests pass).
+- **Verify:**
+  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all clean).
+  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all clean).
+- **Next:** 15 place zones and obstacles; 16 autosave leased edit session; 21 employee workbook.
+---
+
+# Ticket 15 — Place Zones and Obstacles
+
+**Ticket:** `docs/implementation/mvp/tickets/15-place-zones-and-obstacles.md` — completed
+
+- **Backend:**
+  - Geometry Seam: Added `SpatialClass`, `doSpatialClassesCollide`, and `checkSpatialCollision` in `src/geometry/orthogonal.ts`. Enforces `GEOMETRY.md` rules: Zones are semantic regions and do not collide with anything (Zones can overlap other Zones, Zones can contain Physical elements and Obstacles); Physical elements and Obstacles mutually collide and cannot overlap interiors, while collinear edge touching without interior intersection is permitted; all spatial classes (`PHYSICAL`, `ZONE`, `OBSTACLE`) must be strictly contained within Floor Boundary.
+  - Service: Updated `placeElement` and `updatePlacement` in `src/floor-plans/service.ts` to allow `ZONE` and `OBSTACLE` template placements alongside `PHYSICAL`, applying spatial-class-aware collision checking (`checkSpatialCollision`) while enforcing floor boundary containment for all classes.
+  - Tests:
+    - Added property and unit tests in `test/geometry.orthogonal.test.ts` for all spatial class combinations and boundary containment.
+    - Added comprehensive integration tests in `test/placements.integration.test.ts`: placing `ZONE` and `OBSTACLE` templates, zones overlapping zones (valid), physical elements inside zones (valid), obstacles inside zones (valid), physical-obstacle mutual collision (400 `placement_collision`), boundary containment rejection for zones and obstacles (400 `outside_boundary`), quarter-turn transforms and translations on zones and obstacles, and role-based authorization ensuring Workplace Planner and Viewer are denied placement, update, and deletion mutations (403 `forbidden`) while being permitted to list placements (78 backend tests pass).
+- **Frontend:**
+  - Geometry Helpers: Added `SpatialClass`, `doSpatialClassesCollide`, and `checkSpatialCollision` in `src/templates/geometry.ts` with unit tests in `src/templates/geometry.test.ts`.
+  - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
+    - Catalog Palette: Loads active `ZONE`, `OBSTACLE`, and `PHYSICAL` templates with current revisions, displaying spatial class badges (`ZONE`, `OBSTACLE`, `PHYSICAL`).
+    - Placement & Transform Preview: Enforces spatial collision rules using `checkSpatialCollision` so that dragging or transforming physical elements/obstacles into zones shows "✓ Valid Position", while physical/obstacle overlaps display the diagonal hatch pattern and "⚠ Invalid Position: Overlaps existing space".
+    - Predictable Layer Ordering: Shared SVG renderer organizes layers: 1) Floor Boundary polygon, 2) Zone spaces (rendered at bottom with 50% opacity and dashed border), 3) Obstacle spaces, 4) Physical spaces, 5) Selection affordance outline, 6) Labels layer (rendered above polygons so text is never obscured), and 7) Drag / Transform preview.
+    - Accessible Details Panel: Displays spatial class badge and semantic explanation text (identifying Zone semantic regions, Obstacle structural barriers, or Physical spaces) without relying on visual styling alone.
+  - Styling: Added CSS badges in `src/styles.css` for `.spatial-badge` and `.spatial-class-badge` (`.badge-zone`, `.badge-obstacle`, `.badge-physical`).
+  - Tests: Added interaction tests in `src/floors/BoundaryEditor.test.tsx` verifying palette loading for all classes, layer ordering in SVG DOM, details panel accessibility descriptions, and selection affordance (66 frontend tests pass).
+- **Verify:**
+  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all 15 test files, 78 tests pass clean).
+  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all 12 test files, 66 tests pass clean).
+- **Next:** 16 autosave leased edit session; 17 publish floor plan; 21 employee workbook.
+
+---
+
+# Ticket 16 — Autosave a leased edit session
+
+**Ticket:** `docs/implementation/mvp/tickets/16-autosave-leased-edit-session.md` — completed
+
+- **Backend:**
+  - Migration `0010_editor_leases_commands.sql`: created `floor_plan_editor_leases` (tracking `revision_id`, `held_by`, `token`, `acquired_at`, `expires_at`, `released_at`) and `processed_commands` (idempotent command journal storing `revision_id`, `command_id`, `payload_hash`, `status_code`, `response_payload`, and `created_at`).
+  - Schema & Service:
+    - Added tables `floorPlanEditorLeases` and `processedCommands` to `src/db/schema.ts`.
+    - Implemented lease lifecycle methods in `src/floor-plans/service.ts`: `acquireLease`, `getLease`, `renewLease`, `releaseLease`, and `takeoverLease`.
+    - Integrated `audit_events` with `correlationId: revision.id` for `ACQUIRE_LEASE`, `RELEASE_LEASE`, and `TAKEOVER_LEASE`.
+    - Added lease enforcement & command idempotency via helper `checkLeaseAndCommand`: requires valid active lease token (`x-lease-token` / `leaseToken`) matching the caller; verifies idempotent commands via `x-client-command-id` / `clientCommandId` returning cached responses on identical hash retry or returning `409 Conflict` (`command_id_payload_mismatch`) when an ID is reused with a different payload.
+    - Wrapped mutation methods (`updateRevisionBoundary`, `updateRevisionScale`, `placeElement`, `updatePlacement`, `deletePlacement`) with lease and command checking.
+  - Routes & Errors: Added `GET`, `POST`, `POST /renew`, `POST /release`, and `POST /takeover` endpoints under `/floors/:floorId/floor-plan/revisions/:revisionId/lease` with standard error mappings (`lease_conflict`, `lease_invalid_token`, `lease_expired`, `command_id_payload_mismatch`).
+  - Tests: Added comprehensive HTTP integration tests in `test/editor-leases.integration.test.ts` verifying lease acquisition, conflict rejection (`409 lease_conflict`), renewal, release, takeover after expiry/release, mutation authorization with lease token, command deduplication and payload mismatch rejection (83 backend tests pass).
+- **Frontend:**
+  - OpenAPI: Synced backend OpenAPI spec to `openapi/dskt-backend.openapi.json` and generated `src/api/schema.ts`.
+  - Client API: Added `getFloorPlanLease`, `acquireFloorPlanLease`, `renewFloorPlanLease`, `releaseFloorPlanLease`, and `takeoverFloorPlanLease` in `src/floors/floor-plan-api.ts`, and updated mutation APIs to pass `leaseToken` and `clientCommandId`.
+  - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
+    - Lease Lifecycle: Automatically acquires a 60-second lease on mount for draft revisions, cleanly releases on unmount, and heartbeats every 25 seconds to renew the lease.
+    - Lease Status & Takeover: Displays active lease holder and live seconds-remaining countdown badge. When leased by another user, switches to read-only conflict state, disables editing controls, and exposes an audited Takeover button if the lease is expired.
+    - Debounced Autosave: Autosaves boundary edits with a 500ms debounce, generating stable client command IDs and attaching lease tokens.
+    - Autosave Indicator: Distinguishes `Saving...`, `✓ Saved`, `Validation Error`, `⚠ Conflict`, `⚠ Offline / Unavailable`, and `✓ Ready` without relying on color alone.
+  - Tests: Updated `src/floors/BoundaryEditor.test.tsx` verifying lease acquisition, conflict handling, takeover, and debounced autosave (69 frontend tests pass).
+- **Verify:**
+  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all 16 test files, 83 tests pass clean).
+  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all 12 test files, 69 tests pass clean).
+- **Next:** 17 publish floor plan; 18 floor plan revision history; 21 employee workbook.
+
+
+
+
