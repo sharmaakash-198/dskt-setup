@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 19 Publish a Floor Plan  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow authorized users to browse the current Published Floor Plan and inspect pe
 
 ## Acceptance criteria
 
-- [ ] Facilities Admin, Workplace Planner, and Viewer can open the current Published map for an active Floor.
-- [ ] The shared renderer displays the immutable boundary and all Placed Element classes with accessible object details.
-- [ ] No editing controls or mutation endpoints are available in the Published experience.
-- [ ] Facilities Admin can inspect Draft and Archived revision metadata; Workplace Planner and Viewer cannot access Draft geometry.
-- [ ] Empty, unpublished, archived-location, loading, and unavailable states are explicit.
-- [ ] API projections avoid exposing unnecessary employee or historical data.
+- [x] Facilities Admin, Workplace Planner, and Viewer can open the current Published map for an active Floor.
+- [x] The shared renderer displays the immutable boundary and all Placed Element classes with accessible object details.
+- [x] No editing controls or mutation endpoints are available in the Published experience.
+- [x] Facilities Admin can inspect Draft and Archived revision metadata; Workplace Planner and Viewer cannot access Draft geometry.
+- [x] Empty, unpublished, archived-location, loading, and unavailable states are explicit.
+- [x] API projections avoid exposing unnecessary employee or historical data.
 
 ## Verification
 

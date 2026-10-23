@@ -2,7 +2,7 @@
 
 **Ticket Reference:** `docs/implementation/mvp/tickets/03-role-authorized-workspace.md`  
 **Status:** Completed  
-**Repositories Involved:** `dskt-backend`, `dskt-frontend`, `DSKT-setup`  
+**Repositories Involved:** `dskt-backend`, `dskt-frontend`, `DSKT-setup`
 
 ---
 
@@ -14,36 +14,40 @@ After local sign-in, present the Facilities, Workplace, Viewer, or Access Admin 
 
 ## 2. Acceptance Criteria Verification
 
-| Acceptance Criterion | Status | Verification Detail |
-|---|---|---|
-| Effective permissions are the union of all active role grants. | Verified | Session `roles` / `navigation` and workspace entry checks load `app_user_roles` where `revoked_at IS NULL`. Multi-role users receive the union (e.g. Facilities + Viewer). |
+| Acceptance Criterion                                             | Status   | Verification Detail                                                                                                                                                             |
+| ---------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Effective permissions are the union of all active role grants.   | Verified | Session `roles` / `navigation` and workspace entry checks load `app_user_roles` where `revoked_at IS NULL`. Multi-role users receive the union (e.g. Facilities + Viewer).      |
 | Distinct role-appropriate navigation and empty workspace states. | Verified | Frontend `WorkspaceShell` renders nav from session navigation; each workspace entry returns a role-specific empty state. Component tests cover Facilities / Workplace / Viewer. |
-| Multi-role users can reach every granted capability. | Verified | Integration matrix case `combo` and frontend multi-role nav test. |
-| Missing or revoked roles produce clear access-denied behavior. | Verified | No-role session shows access-denied UI; revoked role returns `403 { error: "forbidden" }` on next request with no workspace payload. |
-| Backend authorization is authoritative. | Verified | Workspace routes use `requirePrincipal` + `requireAnyRole`; denied callers get 403 without empty-state data. |
-| Provider-neutral principal; no LOCAL/ENTRA branching in domain. | Verified | `RequestPrincipal` carries `appUserId`, `provider`, `providerSubject`, and `roles`. Workspace module only checks roles. |
+| Multi-role users can reach every granted capability.             | Verified | Integration matrix case `combo` and frontend multi-role nav test.                                                                                                               |
+| Missing or revoked roles produce clear access-denied behavior.   | Verified | No-role session shows access-denied UI; revoked role returns `403 { error: "forbidden" }` on next request with no workspace payload.                                            |
+| Backend authorization is authoritative.                          | Verified | Workspace routes use `requirePrincipal` + `requireAnyRole`; denied callers get 403 without empty-state data.                                                                    |
+| Provider-neutral principal; no LOCAL/ENTRA branching in domain.  | Verified | `RequestPrincipal` carries `appUserId`, `provider`, `providerSubject`, and `roles`. Workspace module only checks roles.                                                         |
 
 ---
 
 ## 3. Backend Changes (`dskt-backend`)
 
 ### 3.1 Principal and permissions
+
 - **`src/auth/principal.ts`**: `RequestPrincipal`, `RoleCode`, `NavigationKey`, `navigationForRoles`.
 - **`src/auth/permissions.ts`**: `requirePrincipal`, `requireAnyRole`, session cookie constant; attaches `request.principal`.
 - **`src/auth/local-provider.ts`**: `signIn` / `fromToken` resolve a principal including active roles and identity (`LOCAL` preferred for local sessions).
 
 ### 3.2 Session contract
+
 - **`src/auth/routes.ts`**: Sign-in and session responses now return `{ user, roles, navigation }`.
 
 ### 3.3 Workspace entry operations
+
 - **`src/workspace/routes.ts`**: Protected GETs:
-  - `/workspace/facilities` → `FACILITIES_ADMIN`
-  - `/workspace/workplace` → `WORKPLACE_PLANNER`
-  - `/workspace/viewer` → `VIEWER`
-  - `/workspace/access-admin` → `SYSTEM_ADMIN`
+    - `/workspace/facilities` → `FACILITIES_ADMIN`
+    - `/workspace/workplace` → `WORKPLACE_PLANNER`
+    - `/workspace/viewer` → `VIEWER`
+    - `/workspace/access-admin` → `SYSTEM_ADMIN`
 - Each returns `{ workspace, title, emptyState }` or `401` / `403`.
 
 ### 3.4 Tests
+
 - **`test/principal.test.ts`**: navigation union unit tests.
 - **`test/authorization.integration.test.ts`**: role matrix, no-role, unauthenticated, inactive, revoked-role.
 - **`test/auth.integration.test.ts`**: updated for roles/navigation in session payload.
@@ -54,15 +58,18 @@ After local sign-in, present the Facilities, Workplace, Viewer, or Access Admin 
 ## 4. Frontend Changes (`dskt-frontend`)
 
 ### 4.1 Contract
+
 - Pinned OpenAPI updated; `npm run openapi:generate` refreshed `src/api/schema.ts`.
 
 ### 4.2 Auth + workspace shell
+
 - **`src/auth/auth.ts`**: `Session` with roles/navigation; `enterWorkspace` helper.
 - **`src/workspace/WorkspaceShell.tsx`**: role-aware nav, empty states, access-denied.
 - **`src/auth/SignInPage.tsx`**: authenticated users enter the workspace shell.
 - Styles for nav items, empty workspace, and denied state.
 
 ### 4.3 Tests
+
 - Sign-in / workspace component tests for permitted nav, multi-role switching, and denied states.
 - **Results:** 12/12 frontend tests pass; lint / typecheck / openapi:check / build green.
 
@@ -124,15 +131,15 @@ Provide an operational local-only flow for an authenticated System Administrator
 
 ## 2. Acceptance Criteria Verification
 
-| Acceptance Criterion | Status | Verification Detail |
-|---|---|---|
-| One-time bootstrap creates first local System Admin with OOB password. | Verified | `bootstrap-local` refuses when an active SYSTEM_ADMIN already exists; creates/completes first admin with Argon2id hash only. |
-| System Admin creates provider-neutral user + local identity with OOB password. | Verified | `POST /access-admin/users` creates `app_users` + LOCAL identity + credential; password never returned. |
-| Grant/revoke Facilities Admin, Workplace Planner, Viewer independently. | Verified | Integration tests grant all three and revoke Workplace Planner. |
-| At most one active grant; history retained. | Verified | Partial unique index + 409 on duplicate; revoked rows kept. |
-| Deactivation blocks next request; permits lease reclaim. | Verified | Inactive session gets 401; leases marked reclaimable; `POST .../editor-leases/reclaim`. |
-| Role/activation changes transactional with safe audit. | Verified | Service uses DB transactions; audit rows include actor, target, timestamp, correlation ID. |
-| System Admin has no domain access alone; product roles cannot administer. | Verified | Sysadmin denied facilities/workplace/viewer; FA/WP/Viewer get 403 on access-admin routes. |
+| Acceptance Criterion                                                           | Status   | Verification Detail                                                                                                          |
+| ------------------------------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| One-time bootstrap creates first local System Admin with OOB password.         | Verified | `bootstrap-local` refuses when an active SYSTEM_ADMIN already exists; creates/completes first admin with Argon2id hash only. |
+| System Admin creates provider-neutral user + local identity with OOB password. | Verified | `POST /access-admin/users` creates `app_users` + LOCAL identity + credential; password never returned.                       |
+| Grant/revoke Facilities Admin, Workplace Planner, Viewer independently.        | Verified | Integration tests grant all three and revoke Workplace Planner.                                                              |
+| At most one active grant; history retained.                                    | Verified | Partial unique index + 409 on duplicate; revoked rows kept.                                                                  |
+| Deactivation blocks next request; permits lease reclaim.                       | Verified | Inactive session gets 401; leases marked reclaimable; `POST .../editor-leases/reclaim`.                                      |
+| Role/activation changes transactional with safe audit.                         | Verified | Service uses DB transactions; audit rows include actor, target, timestamp, correlation ID.                                   |
+| System Admin has no domain access alone; product roles cannot administer.      | Verified | Sysadmin denied facilities/workplace/viewer; FA/WP/Viewer get 403 on access-admin routes.                                    |
 
 ---
 
@@ -210,14 +217,14 @@ Allow a Facilities Admin to create, browse, update, and archive Arrise Sites, wi
 
 ## 2. Acceptance Criteria Verification
 
-| Acceptance Criterion | Status | Verification Detail |
-|---|---|---|
+| Acceptance Criterion                                          | Status   | Verification Detail                                                                                        |
+| ------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
 | FA creates Site with validated code, name, time zone, address | Verified | Zod + service validation; codes normalized uppercase; IANA time zones via `Intl`; optional address fields. |
-| Location view: order + loading/empty/validation/unavailable | Verified | Active sites ordered by code; `SitesPanel` covers loading, empty, conflict messages, unavailable. |
-| Unique codes with stable actionable errors | Verified | Org-scoped unique constraint; `409 { error: "site_code_taken" }`; UI maps to readable copy. |
-| Archive soft-deletes; blocks active buildings; no cascade | Verified | Sets `archived_at`; rejects with `site_has_active_buildings`; historical row retained. |
-| WP/Viewer read-only; FA mutates | Verified | Role matrix integration test including PATCH denial. |
-| Site archival audited | Verified | `audit_events` action `site.archived` with actor, target, correlation ID. |
+| Location view: order + loading/empty/validation/unavailable   | Verified | Active sites ordered by code; `SitesPanel` covers loading, empty, conflict messages, unavailable.          |
+| Unique codes with stable actionable errors                    | Verified | Org-scoped unique constraint; `409 { error: "site_code_taken" }`; UI maps to readable copy.                |
+| Archive soft-deletes; blocks active buildings; no cascade     | Verified | Sets `archived_at`; rejects with `site_has_active_buildings`; historical row retained.                     |
+| WP/Viewer read-only; FA mutates                               | Verified | Role matrix integration test including PATCH denial.                                                       |
+| Site archival audited                                         | Verified | `audit_events` action `site.archived` with actor, target, correlation ID.                                  |
 
 ---
 
@@ -293,14 +300,14 @@ Allow a Facilities Admin to complete the location hierarchy by managing Building
 
 ## 2. Acceptance Criteria Verification
 
-| Acceptance Criterion | Status | Verification Detail |
-|---|---|---|
-| FA create/update/browse/archive Buildings under active Site | Verified | HTTP CRUD under `/sites/:siteId/buildings` and `/buildings/:id`; UI BuildingsPanel. |
-| FA create/update/browse/archive Floors under active Building | Verified | HTTP CRUD under `/buildings/:buildingId/floors` and `/floors/:id`; UI FloorsPanel. |
-| Codes unique in parent scope with stable errors | Verified | Unique `(site_id, code)` / `(building_id, code)`; `409 building_code_taken` / `floor_code_taken`. |
-| Archived parents reject children; building archive blocked by active floors; no cascade delete | Verified | `site_archived` / `building_archived` / `building_has_active_floors`; soft archive retains rows. |
-| WP/Viewer navigate but cannot mutate | Verified | Role matrix integration test; UI `canMutate` only in Facilities workspace for FA. |
-| Building and Floor archival audited | Verified | `audit_events` actions `building.archived` and `floor.archived`. |
+| Acceptance Criterion                                                                           | Status   | Verification Detail                                                                               |
+| ---------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| FA create/update/browse/archive Buildings under active Site                                    | Verified | HTTP CRUD under `/sites/:siteId/buildings` and `/buildings/:id`; UI BuildingsPanel.               |
+| FA create/update/browse/archive Floors under active Building                                   | Verified | HTTP CRUD under `/buildings/:buildingId/floors` and `/floors/:id`; UI FloorsPanel.                |
+| Codes unique in parent scope with stable errors                                                | Verified | Unique `(site_id, code)` / `(building_id, code)`; `409 building_code_taken` / `floor_code_taken`. |
+| Archived parents reject children; building archive blocked by active floors; no cascade delete | Verified | `site_archived` / `building_archived` / `building_has_active_floors`; soft archive retains rows.  |
+| WP/Viewer navigate but cannot mutate                                                           | Verified | Role matrix integration test; UI `canMutate` only in Facilities workspace for FA.                 |
+| Building and Floor archival audited                                                            | Verified | `audit_events` actions `building.archived` and `floor.archived`.                                  |
 
 ---
 
@@ -405,6 +412,7 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Frontend:** `TemplatesCatalog.tsx` distinguishes current revisions with badge, allows Facilities Admins to activate revisions as current via `activateTemplateRevision` API, supports read-only revision history view; OpenAPI client updated; 47 frontend tests pass.
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
 - **Next:** 11 create draft floor plan; 21 employee workbook.
+
 ---
 
 # Ticket 11 — Create a Draft Floor Plan
@@ -415,6 +423,7 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Frontend:** `src/floors/floor-plan-api.ts`, `src/floors/FloorWorkspace.tsx` (create draft floor plan from empty floor with scale selector, revision history distinguishing Draft, Published, and Archived states, read-only guard for non-facilities); OpenAPI client regenerated; 50 frontend tests pass.
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
 - **Next:** 12 edit floor boundary; 21 employee workbook.
+
 ---
 
 # Ticket 12 — Edit a Floor Boundary
@@ -425,6 +434,7 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 - **Frontend:** `src/floors/BoundaryEditor.tsx`, `src/floors/FloorWorkspace.tsx`, `src/floors/floor-plan-api.ts`; interactive boundary canvas with scale-zoom separation (zoom/pan change only viewport, preserving domain world coordinates), live dimensions and coordinate feedback, accessible HTML summary, orthogonality guidance diagnostics, vertex editing with grid snapping, and boundary saving with concurrency version tracking; OpenAPI client regenerated; 55 frontend tests pass.
 - **Verify:** `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend`; `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend`.
 - **Next:** 13 place physical space; 21 employee workbook.
+
 ---
 
 # Ticket 13 — Place a Physical Space
@@ -432,27 +442,28 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 **Ticket:** `docs/implementation/mvp/tickets/13-place-physical-space.md` — completed
 
 - **Backend:**
-  - Migration `0009_placed_elements.sql`: created `placement_identities` (stable identity per floor plan) and `placed_elements` (revision-specific placement records pinned to `element_template_revisions`, with rotation degrees 0/90/180/270 and integer world coordinates).
-  - Geometry Seam: Added orthogonal spatial predicates in `src/geometry/orthogonal.ts` (`transformVertices`, `isPointInsideOrOnPolygon`, `isPointStrictlyInsidePolygon`, `segmentsCrossProperly`, `isPolygonInsideBoundary`, `doPolygonsOverlap`).
-  - Service & API: Implemented `placeElement` and `listPlacements` in `src/floor-plans/service.ts`, exposed routes `POST /floors/:floorId/floor-plan/revisions/:revisionId/placements` and `GET /floors/:floorId/floor-plan/revisions/:revisionId/placements` in `src/floor-plans/routes.ts`.
-  - Validation: Validates caller permission (Facilities Admin), floor plan draft lifecycle state, physical template spatial class (`PHYSICAL`), active current template revision, floor boundary containment, and non-overlapping collision against physical/obstacle spaces. Collinear adjacent boundary contacts are cleanly permitted while interior overlaps and out-of-boundary positions are rejected.
-  - Tests: Added comprehensive unit tests in `test/geometry.orthogonal.test.ts` and integration tests in `test/placements.integration.test.ts` (68 backend tests pass).
+    - Migration `0009_placed_elements.sql`: created `placement_identities` (stable identity per floor plan) and `placed_elements` (revision-specific placement records pinned to `element_template_revisions`, with rotation degrees 0/90/180/270 and integer world coordinates).
+    - Geometry Seam: Added orthogonal spatial predicates in `src/geometry/orthogonal.ts` (`transformVertices`, `isPointInsideOrOnPolygon`, `isPointStrictlyInsidePolygon`, `segmentsCrossProperly`, `isPolygonInsideBoundary`, `doPolygonsOverlap`).
+    - Service & API: Implemented `placeElement` and `listPlacements` in `src/floor-plans/service.ts`, exposed routes `POST /floors/:floorId/floor-plan/revisions/:revisionId/placements` and `GET /floors/:floorId/floor-plan/revisions/:revisionId/placements` in `src/floor-plans/routes.ts`.
+    - Validation: Validates caller permission (Facilities Admin), floor plan draft lifecycle state, physical template spatial class (`PHYSICAL`), active current template revision, floor boundary containment, and non-overlapping collision against physical/obstacle spaces. Collinear adjacent boundary contacts are cleanly permitted while interior overlaps and out-of-boundary positions are rejected.
+    - Tests: Added comprehensive unit tests in `test/geometry.orthogonal.test.ts` and integration tests in `test/placements.integration.test.ts` (68 backend tests pass).
 - **Frontend:**
-  - OpenAPI: Regenerated TypeScript client schemas (`src/api/schema.ts`).
-  - API Client: Added `createPlacedElement` and `listPlacedElements` in `src/floors/floor-plan-api.ts`.
-  - Geometry Helpers: Implemented transform, containment, and collision checking in `src/templates/geometry.ts` with unit tests in `src/templates/geometry.test.ts`.
-  - Boundary Editor:
-    - Added catalog palette displaying only active, unarchived physical templates with current revisions.
-    - Drag & drop over floor plan canvas with editing-scale grid snapping.
-    - Real-time snapped preview distinguishing invalid positions without relying on color alone (diagonal hatch pattern `url(#invalid-hatch)`, warning badge/symbol, and accessible `role="status"` live region).
-    - Commit placement creates stable identity and revision-pinned placed space.
-    - Shared SVG renderer displays placed spaces using polygon vertices and labels.
-    - Accessible manual placement form and placed spaces summary list.
-  - Tests: Added unit and interaction tests in `src/floors/BoundaryEditor.test.tsx` (61 frontend tests pass).
+    - OpenAPI: Regenerated TypeScript client schemas (`src/api/schema.ts`).
+    - API Client: Added `createPlacedElement` and `listPlacedElements` in `src/floors/floor-plan-api.ts`.
+    - Geometry Helpers: Implemented transform, containment, and collision checking in `src/templates/geometry.ts` with unit tests in `src/templates/geometry.test.ts`.
+    - Boundary Editor:
+        - Added catalog palette displaying only active, unarchived physical templates with current revisions.
+        - Drag & drop over floor plan canvas with editing-scale grid snapping.
+        - Real-time snapped preview distinguishing invalid positions without relying on color alone (diagonal hatch pattern `url(#invalid-hatch)`, warning badge/symbol, and accessible `role="status"` live region).
+        - Commit placement creates stable identity and revision-pinned placed space.
+        - Shared SVG renderer displays placed spaces using polygon vertices and labels.
+        - Accessible manual placement form and placed spaces summary list.
+    - Tests: Added unit and interaction tests in `src/floors/BoundaryEditor.test.tsx` (61 frontend tests pass).
 - **Verify:**
-  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all clean).
-  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all clean).
+    - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all clean).
+    - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all clean).
 - **Next:** 14 transform placed spaces; 15 place zones and obstacles; 21 employee workbook.
+
 ---
 
 # Ticket 14 — Transform Placed Spaces
@@ -460,28 +471,29 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 **Ticket:** `docs/implementation/mvp/tickets/14-transform-placed-spaces.md` — completed
 
 - **Backend:**
-  - Placed element projection: Added `templateRevisionNumber` and `assignable` to `PlacedElementView` and OpenAPI schema.
-  - Transformation & Removal API:
-    - Implemented `updatePlacement` and `deletePlacement` in `src/floor-plans/service.ts`.
-    - Added `PATCH /floors/:floorId/floor-plan/revisions/:revisionId/placements/:placementId` (validating draft lifecycle state, integer world coordinates, quarter-turn rotation `0 | 90 | 180 | 270`, boundary containment, collision prevention, and optimistic concurrency). Strict schema validation forbids any resize parameters (width, height, vertices, scale).
-    - Added `DELETE /floors/:floorId/floor-plan/revisions/:revisionId/placements/:placementId` (deletes from draft `placed_elements` revision while strictly preserving the stable `placement_identities` record and historical revisions, with optimistic concurrency check).
-  - Verification & Tests:
-    - Added 5 quarter-turn property tests in `test/geometry.orthogonal.test.ts` (4 consecutive 90° rotations identity, inverse angle round-trip, arbitrary integer translation + rotation round-trip, segment length preservation, and shoelace area invariance).
-    - Added HTTP integration tests in `test/placements.integration.test.ts` covering translation, quarter-turns, invalid rotation rejection (400), resize attempt rejection (400), concurrency conflicts (409), draft deletion, and database identity preservation (74 backend tests pass).
+    - Placed element projection: Added `templateRevisionNumber` and `assignable` to `PlacedElementView` and OpenAPI schema.
+    - Transformation & Removal API:
+        - Implemented `updatePlacement` and `deletePlacement` in `src/floor-plans/service.ts`.
+        - Added `PATCH /floors/:floorId/floor-plan/revisions/:revisionId/placements/:placementId` (validating draft lifecycle state, integer world coordinates, quarter-turn rotation `0 | 90 | 180 | 270`, boundary containment, collision prevention, and optimistic concurrency). Strict schema validation forbids any resize parameters (width, height, vertices, scale).
+        - Added `DELETE /floors/:floorId/floor-plan/revisions/:revisionId/placements/:placementId` (deletes from draft `placed_elements` revision while strictly preserving the stable `placement_identities` record and historical revisions, with optimistic concurrency check).
+    - Verification & Tests:
+        - Added 5 quarter-turn property tests in `test/geometry.orthogonal.test.ts` (4 consecutive 90° rotations identity, inverse angle round-trip, arbitrary integer translation + rotation round-trip, segment length preservation, and shoelace area invariance).
+        - Added HTTP integration tests in `test/placements.integration.test.ts` covering translation, quarter-turns, invalid rotation rejection (400), resize attempt rejection (400), concurrency conflicts (409), draft deletion, and database identity preservation (74 backend tests pass).
 - **Frontend:**
-  - OpenAPI: Synced backend OpenAPI spec to `openapi/dskt-backend.openapi.json` and generated `src/api/schema.ts`.
-  - Client API: Added `updatePlacedElement` and `deletePlacedElement` in `src/floors/floor-plan-api.ts`.
-  - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
-    - Selection: Clicking on an SVG placed space or choosing from the Placed Spaces list selects the space with visual dashed highlight and opens the accessible Details Panel.
-    - Details Panel: Displays Template Revision, spatial class, coordinates (world units and cm), quarter-turn rotation, assignability, and validation state.
-    - Translation & Rotation Controls: Inputs for integer world coordinates snapping to active editing scale, and `↺ 90° CCW` / `↻ 90° CW` quarter-turn rotation buttons.
-    - Transform Preview: Real-time responsive preview distinguishing invalid coordinates using diagonal SVG hatch pattern (`url(#invalid-hatch)`), warning symbol (`⚠ Invalid`), and live region alert without relying on color alone, disabling "Save Transform" until valid.
-    - Removal: "Remove from Draft" button deletes placement from current draft revision and increments revision concurrency version.
-  - Tests: Added interaction tests in `src/floors/BoundaryEditor.test.tsx` verifying selection details, live transform previews, quarter-turn rotation, removal, and concurrency version updates (65 frontend tests pass).
+    - OpenAPI: Synced backend OpenAPI spec to `openapi/dskt-backend.openapi.json` and generated `src/api/schema.ts`.
+    - Client API: Added `updatePlacedElement` and `deletePlacedElement` in `src/floors/floor-plan-api.ts`.
+    - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
+        - Selection: Clicking on an SVG placed space or choosing from the Placed Spaces list selects the space with visual dashed highlight and opens the accessible Details Panel.
+        - Details Panel: Displays Template Revision, spatial class, coordinates (world units and cm), quarter-turn rotation, assignability, and validation state.
+        - Translation & Rotation Controls: Inputs for integer world coordinates snapping to active editing scale, and `↺ 90° CCW` / `↻ 90° CW` quarter-turn rotation buttons.
+        - Transform Preview: Real-time responsive preview distinguishing invalid coordinates using diagonal SVG hatch pattern (`url(#invalid-hatch)`), warning symbol (`⚠ Invalid`), and live region alert without relying on color alone, disabling "Save Transform" until valid.
+        - Removal: "Remove from Draft" button deletes placement from current draft revision and increments revision concurrency version.
+    - Tests: Added interaction tests in `src/floors/BoundaryEditor.test.tsx` verifying selection details, live transform previews, quarter-turn rotation, removal, and concurrency version updates (65 frontend tests pass).
 - **Verify:**
-  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all clean).
-  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all clean).
+    - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all clean).
+    - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all clean).
 - **Next:** 15 place zones and obstacles; 16 autosave leased edit session; 21 employee workbook.
+
 ---
 
 # Ticket 15 — Place Zones and Obstacles
@@ -489,23 +501,23 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 **Ticket:** `docs/implementation/mvp/tickets/15-place-zones-and-obstacles.md` — completed
 
 - **Backend:**
-  - Geometry Seam: Added `SpatialClass`, `doSpatialClassesCollide`, and `checkSpatialCollision` in `src/geometry/orthogonal.ts`. Enforces `GEOMETRY.md` rules: Zones are semantic regions and do not collide with anything (Zones can overlap other Zones, Zones can contain Physical elements and Obstacles); Physical elements and Obstacles mutually collide and cannot overlap interiors, while collinear edge touching without interior intersection is permitted; all spatial classes (`PHYSICAL`, `ZONE`, `OBSTACLE`) must be strictly contained within Floor Boundary.
-  - Service: Updated `placeElement` and `updatePlacement` in `src/floor-plans/service.ts` to allow `ZONE` and `OBSTACLE` template placements alongside `PHYSICAL`, applying spatial-class-aware collision checking (`checkSpatialCollision`) while enforcing floor boundary containment for all classes.
-  - Tests:
-    - Added property and unit tests in `test/geometry.orthogonal.test.ts` for all spatial class combinations and boundary containment.
-    - Added comprehensive integration tests in `test/placements.integration.test.ts`: placing `ZONE` and `OBSTACLE` templates, zones overlapping zones (valid), physical elements inside zones (valid), obstacles inside zones (valid), physical-obstacle mutual collision (400 `placement_collision`), boundary containment rejection for zones and obstacles (400 `outside_boundary`), quarter-turn transforms and translations on zones and obstacles, and role-based authorization ensuring Workplace Planner and Viewer are denied placement, update, and deletion mutations (403 `forbidden`) while being permitted to list placements (78 backend tests pass).
+    - Geometry Seam: Added `SpatialClass`, `doSpatialClassesCollide`, and `checkSpatialCollision` in `src/geometry/orthogonal.ts`. Enforces `GEOMETRY.md` rules: Zones are semantic regions and do not collide with anything (Zones can overlap other Zones, Zones can contain Physical elements and Obstacles); Physical elements and Obstacles mutually collide and cannot overlap interiors, while collinear edge touching without interior intersection is permitted; all spatial classes (`PHYSICAL`, `ZONE`, `OBSTACLE`) must be strictly contained within Floor Boundary.
+    - Service: Updated `placeElement` and `updatePlacement` in `src/floor-plans/service.ts` to allow `ZONE` and `OBSTACLE` template placements alongside `PHYSICAL`, applying spatial-class-aware collision checking (`checkSpatialCollision`) while enforcing floor boundary containment for all classes.
+    - Tests:
+        - Added property and unit tests in `test/geometry.orthogonal.test.ts` for all spatial class combinations and boundary containment.
+        - Added comprehensive integration tests in `test/placements.integration.test.ts`: placing `ZONE` and `OBSTACLE` templates, zones overlapping zones (valid), physical elements inside zones (valid), obstacles inside zones (valid), physical-obstacle mutual collision (400 `placement_collision`), boundary containment rejection for zones and obstacles (400 `outside_boundary`), quarter-turn transforms and translations on zones and obstacles, and role-based authorization ensuring Workplace Planner and Viewer are denied placement, update, and deletion mutations (403 `forbidden`) while being permitted to list placements (78 backend tests pass).
 - **Frontend:**
-  - Geometry Helpers: Added `SpatialClass`, `doSpatialClassesCollide`, and `checkSpatialCollision` in `src/templates/geometry.ts` with unit tests in `src/templates/geometry.test.ts`.
-  - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
-    - Catalog Palette: Loads active `ZONE`, `OBSTACLE`, and `PHYSICAL` templates with current revisions, displaying spatial class badges (`ZONE`, `OBSTACLE`, `PHYSICAL`).
-    - Placement & Transform Preview: Enforces spatial collision rules using `checkSpatialCollision` so that dragging or transforming physical elements/obstacles into zones shows "✓ Valid Position", while physical/obstacle overlaps display the diagonal hatch pattern and "⚠ Invalid Position: Overlaps existing space".
-    - Predictable Layer Ordering: Shared SVG renderer organizes layers: 1) Floor Boundary polygon, 2) Zone spaces (rendered at bottom with 50% opacity and dashed border), 3) Obstacle spaces, 4) Physical spaces, 5) Selection affordance outline, 6) Labels layer (rendered above polygons so text is never obscured), and 7) Drag / Transform preview.
-    - Accessible Details Panel: Displays spatial class badge and semantic explanation text (identifying Zone semantic regions, Obstacle structural barriers, or Physical spaces) without relying on visual styling alone.
-  - Styling: Added CSS badges in `src/styles.css` for `.spatial-badge` and `.spatial-class-badge` (`.badge-zone`, `.badge-obstacle`, `.badge-physical`).
-  - Tests: Added interaction tests in `src/floors/BoundaryEditor.test.tsx` verifying palette loading for all classes, layer ordering in SVG DOM, details panel accessibility descriptions, and selection affordance (66 frontend tests pass).
+    - Geometry Helpers: Added `SpatialClass`, `doSpatialClassesCollide`, and `checkSpatialCollision` in `src/templates/geometry.ts` with unit tests in `src/templates/geometry.test.ts`.
+    - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
+        - Catalog Palette: Loads active `ZONE`, `OBSTACLE`, and `PHYSICAL` templates with current revisions, displaying spatial class badges (`ZONE`, `OBSTACLE`, `PHYSICAL`).
+        - Placement & Transform Preview: Enforces spatial collision rules using `checkSpatialCollision` so that dragging or transforming physical elements/obstacles into zones shows "✓ Valid Position", while physical/obstacle overlaps display the diagonal hatch pattern and "⚠ Invalid Position: Overlaps existing space".
+        - Predictable Layer Ordering: Shared SVG renderer organizes layers: 1) Floor Boundary polygon, 2) Zone spaces (rendered at bottom with 50% opacity and dashed border), 3) Obstacle spaces, 4) Physical spaces, 5) Selection affordance outline, 6) Labels layer (rendered above polygons so text is never obscured), and 7) Drag / Transform preview.
+        - Accessible Details Panel: Displays spatial class badge and semantic explanation text (identifying Zone semantic regions, Obstacle structural barriers, or Physical spaces) without relying on visual styling alone.
+    - Styling: Added CSS badges in `src/styles.css` for `.spatial-badge` and `.spatial-class-badge` (`.badge-zone`, `.badge-obstacle`, `.badge-physical`).
+    - Tests: Added interaction tests in `src/floors/BoundaryEditor.test.tsx` verifying palette loading for all classes, layer ordering in SVG DOM, details panel accessibility descriptions, and selection affordance (66 frontend tests pass).
 - **Verify:**
-  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all 15 test files, 78 tests pass clean).
-  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all 12 test files, 66 tests pass clean).
+    - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all 15 test files, 78 tests pass clean).
+    - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all 12 test files, 66 tests pass clean).
 - **Next:** 16 autosave leased edit session; 17 publish floor plan; 21 employee workbook.
 
 ---
@@ -515,261 +527,29 @@ Browser: Facilities Admin → open buildings on a Site → create Building → o
 **Ticket:** `docs/implementation/mvp/tickets/16-autosave-leased-edit-session.md` — completed
 
 - **Backend:**
-  - Migration `0010_editor_leases_commands.sql`: created `floor_plan_editor_leases` (tracking `revision_id`, `held_by`, `token`, `acquired_at`, `expires_at`, `released_at`) and `processed_commands` (idempotent command journal storing `revision_id`, `command_id`, `payload_hash`, `status_code`, `response_payload`, and `created_at`).
-  - Schema & Service:
-    - Added tables `floorPlanEditorLeases` and `processedCommands` to `src/db/schema.ts`.
-    - Implemented lease lifecycle methods in `src/floor-plans/service.ts`: `acquireLease`, `getLease`, `renewLease`, `releaseLease`, and `takeoverLease`.
-    - Integrated `audit_events` with `correlationId: revision.id` for `ACQUIRE_LEASE`, `RELEASE_LEASE`, and `TAKEOVER_LEASE`.
-    - Added lease enforcement & command idempotency via helper `checkLeaseAndCommand`: requires valid active lease token (`x-lease-token` / `leaseToken`) matching the caller; verifies idempotent commands via `x-client-command-id` / `clientCommandId` returning cached responses on identical hash retry or returning `409 Conflict` (`command_id_payload_mismatch`) when an ID is reused with a different payload.
-    - Wrapped mutation methods (`updateRevisionBoundary`, `updateRevisionScale`, `placeElement`, `updatePlacement`, `deletePlacement`) with lease and command checking.
-  - Routes & Errors: Added `GET`, `POST`, `POST /renew`, `POST /release`, and `POST /takeover` endpoints under `/floors/:floorId/floor-plan/revisions/:revisionId/lease` with standard error mappings (`lease_conflict`, `lease_invalid_token`, `lease_expired`, `command_id_payload_mismatch`).
-  - Tests: Added comprehensive HTTP integration tests in `test/editor-leases.integration.test.ts` verifying lease acquisition, conflict rejection (`409 lease_conflict`), renewal, release, takeover after expiry/release, mutation authorization with lease token, command deduplication and payload mismatch rejection (83 backend tests pass).
+    - Migration `0010_editor_leases_commands.sql`: created `floor_plan_editor_leases` (tracking `revision_id`, `held_by`, `token`, `acquired_at`, `expires_at`, `released_at`) and `processed_commands` (idempotent command journal storing `revision_id`, `command_id`, `payload_hash`, `status_code`, `response_payload`, and `created_at`).
+    - Schema & Service:
+        - Added tables `floorPlanEditorLeases` and `processedCommands` to `src/db/schema.ts`.
+        - Implemented lease lifecycle methods in `src/floor-plans/service.ts`: `acquireLease`, `getLease`, `renewLease`, `releaseLease`, and `takeoverLease`.
+        - Integrated `audit_events` with `correlationId: revision.id` for `ACQUIRE_LEASE`, `RELEASE_LEASE`, and `TAKEOVER_LEASE`.
+        - Added lease enforcement & command idempotency via helper `checkLeaseAndCommand`: requires valid active lease token (`x-lease-token` / `leaseToken`) matching the caller; verifies idempotent commands via `x-client-command-id` / `clientCommandId` returning cached responses on identical hash retry or returning `409 Conflict` (`command_id_payload_mismatch`) when an ID is reused with a different payload.
+        - Wrapped mutation methods (`updateRevisionBoundary`, `updateRevisionScale`, `placeElement`, `updatePlacement`, `deletePlacement`) with lease and command checking.
+    - Routes & Errors: Added `GET`, `POST`, `POST /renew`, `POST /release`, and `POST /takeover` endpoints under `/floors/:floorId/floor-plan/revisions/:revisionId/lease` with standard error mappings (`lease_conflict`, `lease_invalid_token`, `lease_expired`, `command_id_payload_mismatch`).
+    - Tests: Added comprehensive HTTP integration tests in `test/editor-leases.integration.test.ts` verifying lease acquisition, conflict rejection (`409 lease_conflict`), renewal, release, takeover after expiry/release, mutation authorization with lease token, command deduplication and payload mismatch rejection (83 backend tests pass).
 - **Frontend:**
-  - OpenAPI: Synced backend OpenAPI spec to `openapi/dskt-backend.openapi.json` and generated `src/api/schema.ts`.
-  - Client API: Added `getFloorPlanLease`, `acquireFloorPlanLease`, `renewFloorPlanLease`, `releaseFloorPlanLease`, and `takeoverFloorPlanLease` in `src/floors/floor-plan-api.ts`, and updated mutation APIs to pass `leaseToken` and `clientCommandId`.
-  - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
-    - Lease Lifecycle: Automatically acquires a 60-second lease on mount for draft revisions, cleanly releases on unmount, and heartbeats every 25 seconds to renew the lease.
-    - Lease Status & Takeover: Displays active lease holder and live seconds-remaining countdown badge. When leased by another user, switches to read-only conflict state, disables editing controls, and exposes an audited Takeover button if the lease is expired.
-    - Debounced Autosave: Autosaves boundary edits with a 500ms debounce, generating stable client command IDs and attaching lease tokens.
-    - Autosave Indicator: Distinguishes `Saving...`, `✓ Saved`, `Validation Error`, `⚠ Conflict`, `⚠ Offline / Unavailable`, and `✓ Ready` without relying on color alone.
-  - Tests: Updated `src/floors/BoundaryEditor.test.tsx` verifying lease acquisition, conflict handling, takeover, and debounced autosave (69 frontend tests pass).
+    - OpenAPI: Synced backend OpenAPI spec to `openapi/dskt-backend.openapi.json` and generated `src/api/schema.ts`.
+    - Client API: Added `getFloorPlanLease`, `acquireFloorPlanLease`, `renewFloorPlanLease`, `releaseFloorPlanLease`, and `takeoverFloorPlanLease` in `src/floors/floor-plan-api.ts`, and updated mutation APIs to pass `leaseToken` and `clientCommandId`.
+    - Boundary Editor (`src/floors/BoundaryEditor.tsx`):
+        - Lease Lifecycle: Automatically acquires a 60-second lease on mount for draft revisions, cleanly releases on unmount, and heartbeats every 25 seconds to renew the lease.
+        - Lease Status & Takeover: Displays active lease holder and live seconds-remaining countdown badge. When leased by another user, switches to read-only conflict state, disables editing controls, and exposes an audited Takeover button if the lease is expired.
+        - Debounced Autosave: Autosaves boundary edits with a 500ms debounce, generating stable client command IDs and attaching lease tokens.
+        - Autosave Indicator: Distinguishes `Saving...`, `✓ Saved`, `Validation Error`, `⚠ Conflict`, `⚠ Offline / Unavailable`, and `✓ Ready` without relying on color alone.
+    - Tests: Updated `src/floors/BoundaryEditor.test.tsx` verifying lease acquisition, conflict handling, takeover, and debounced autosave (69 frontend tests pass).
 - **Verify:**
-  - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all 16 test files, 83 tests pass clean).
-  - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all 12 test files, 69 tests pass clean).
+    - `DATABASE_URL=... npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-backend` (all 16 test files, 83 tests pass clean).
+    - `npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build` in `dskt-frontend` (all 12 test files, 69 tests pass clean).
 - **Next:** 17 publish floor plan; 18 floor plan revision history; 21 employee workbook.
 
 
-------------------------
-
-### ticket 20
-
-Ticket 20 has been implemented and fully verified across both dskt-backend and dskt-   
-  frontend.                                                                              
-  ──────                                                                                 
-  ### Acceptance Criteria Verification                                                   
-                                                                                         
-   Acceptance Criterion                 │ Status │ Verification Summary
-  ──────────────────────────────────────┼────────┼───────────────────────────────────────
-   1. Facilities Admin, Workplace       │ Passed │ GET /floors/:floorId/floor-plan/publi
-   Planner, and Viewer can open current │        │ shed and
-   Published map                        │        │ GET /floors/:floorId/floor-plan allow
-                                        │        │ Facilities Admin, Workplace Planner,
-                                        │        │ and Viewer roles to fetch the current
-                                        │        │ published floor plan projection.
-   2. Shared renderer displays          │ Passed │ BoundaryEditor renders the boundary
-   immutable boundary and all Placed    │        │ polygon and all placed spaces in
-   Element classes with accessible      │        │ strict layer order (ZONE → OBSTACLE →
-   details                              │        │ PHYSICAL). Clicking any space opens
-                                        │        │ the accessible Details Panel showing
-                                        │        │ template revision, spatial class,
-                                        │        │ coordinates, rotation, and
-                                        │        │ assignability.
-   3. No editing controls or mutation   │ Passed │ When viewing the published map,
-   endpoints in Published experience    │        │ editing controls (scale selector,
-                                        │        │ undo/redo, autosave badge,
-                                        │        │ validate/publish buttons, catalog
-                                        │        │ palette, add vertex form, save
-                                        │        │ boundary button, transform and delete
-                                        │        │ forms) are strictly omitted from the
-                                        │        │ DOM. Non-facilities requests to
-                                        │        │ mutation endpoints return 403
-                                        │        │ Forbidden.
-   4. Facilities Admin can inspect      │ Passed │ listRevisions filters out non-
-   Draft/Archived metadata; Planner and │        │ published revisions for non-
-   Viewer denied Draft geometry         │        │ facilities callers. getRevision
-                                        │        │ returns 403 Forbidden if a non-
-                                        │        │ facilities caller requests a DRAFT or
-                                        │        │ ARCHIVED revision. Facilities Admin
-                                        │        │ can switch between Draft Editor and
-                                        │        │ Published Map via UI tabs.
-   5. Explicit empty, unpublished,      │ Passed │ FloorWorkspace handles all 5 explicit
-   archived-location, loading, and      │        │ states with dedicated test IDs:
-   unavailable states                   │        │ loading-state, empty-floor-plan,
-                                        │        │ unpublished-floor-plan, archived-
-                                        │        │ location-state, and unavailable-state
-                                        │        │ (with Retry action).
-   6. API projections avoid exposing    │ Passed │ Projection views expose only floor
-   unnecessary employee or historical   │        │ plan revision geometry and placement
-   data                                 │        │ identity without leaking user
-                                        │        │ assignments or historical audit
-                                        │        │ trails.
-  ──────                                                                                 
-  ### Changes Summary                                                                    
-                                                                                         
-  #### 1. Backend (dskt-backend)                                                         
-                                                                                         
-  • **service.ts**:                                                                      
-      • Added error codes: 'building_archived', 'site_archived',                         
-      'published_revision_not_found', 'forbidden'.                                       
-      • Updated requireActiveFloor to join buildings and sites, checking for archived    
-      parent entities (floor_archived, building_archived, site_archived).                
-      • Added getPublishedFloorPlan(floorId) returning { floorPlan, revision } or 404    
-      published_revision_not_found.                                                      
-      • Updated getFloorPlan and listRevisions to project published revision data for    
-      Workplace Planner and Viewer callers while omitting draft geometry.                
-      • Enforced 403 Forbidden in getRevision for non-Facilities Admin trying to access  
-      DRAFT or ARCHIVED revisions.                                                       
-  • **routes.ts**:                                                                       
-      • Added requireReader = requireAnyRole('FACILITIES_ADMIN', 'WORKPLACE_PLANNER',    
-      'VIEWER').                                                                         
-      • Added GET /floors/:floorId/floor-plan/published protected by requireReader.      
-      • Updated GET /floors/:floorId/floor-plan, GET /floors/:floorId/floor-             
-      plan/revisions, and GET /floors/:floorId/floor-plan/revisions/:revisionId to accept
-      requireReader and pass request.principal.                                          
-      • Regenerated openapi.json.                                                        
-  • **browse-published-maps.integration.test.ts**:                                       
-      • 5 integration test suites verifying role matrix, Draft/Archived 403 denial,      
-      published map retrieval with all element classes, explicit states, and mutation    
-      endpoint denial for Workplace Planner and Viewer.                                  
-  • **floor-plans.integration.test.ts**:                                                 
-      • Updated assertions to reflect Ticket 20 projected published read permissions for 
-      Workplace Planner and Viewer.                                                      
-                                                                                         
-                                                                                         
-  #### 2. Frontend (dskt-frontend)                                                       
-                                                                                         
-  • **dskt-backend.openapi.json & schema.ts**: Synced OpenAPI specification from backend.
-  • **floor-plan-api.ts**:                                                               
-      • Added building_archived, site_archived, published_revision_not_found error copy. 
-      • Updated getFloorPlan return type for publishedRevision and errorCode.            
-      • Added getPublishedFloorPlan(client, floorId).                                    
-      • Updated listFloorPlanRevisions to return errorCode.                              
-  • **BoundaryEditor.tsx**:                                                              
-      • Hid "Editing Scale" select dropdown in toolbar when revision.lifecycleState ===  
-      'PUBLISHED' or !canMutate (toolbar displays only Zoom and Pan controls).           
-      • Ensured all mutation forms, drag/drop placement, autosave, undo/redo, and        
-      validate/publish buttons are strictly hidden in read-only / published mode.        
-      • Preserved accessible element details display when clicking placed spaces on the  
-      published map.                                                                     
-  • **FloorWorkspace.tsx**:                                                              
-      • Implemented the 5 explicit states: loading-state, empty-floor-plan, unpublished- 
-      floor-plan, archived-location-state, and unavailable-state (with Retry action).    
-      • For Workplace Planner and Viewer: strictly renders publishedRevision via shared  
-      BoundaryEditor with canMutate={false} and no editing controls.                     
-      • For Facilities Admin: provides tabs to switch between Draft Editor and Published 
-      Map when both exist or draft exists.                                               
-      • Displays Revision History cards for all permitted revisions.                     
-  • **FloorWorkspace.test.tsx**:                                                         
-      • Added 6 new integration tests verifying:                                         
-          1. Opening Published map with shared renderer and all element classes (ZONE,   
-          PHYSICAL, OBSTACLE) for non-facilities roles.                                  
-          2. Strictly hiding all editing controls in Published experience.               
-          3. Facilities Admin switching between Draft Editor and Published Map.          
-          4. Explicit unpublished state for viewers when draft exists without publication.
-          5. Explicit archived-location state when floor/building/site is archived.      
-          6. Explicit unavailable state when network/server error occurs.                
-                                                                                         
-  • **SitesPanel.test.tsx**: Handled /floor-plan path in route mock before /floors       
-  wildcard so floor workspace tests pass cleanly.                                        
-                                                                                         
-  #### 3. Documentation                                                                  
-                                                                                         
-  • **20-browse-published-maps-and-history.md**: Checked all acceptance criteria and     
-  marked Status: completed.                                                              
-  • **ticket-summary.md**: Appended Ticket 20 summary section with verification          
-  instructions and context for Ticket 21 while preserving all prior summaries.           
-  ──────                                                                                 
-  ### Verification Results                                                               
-                                                                                         
-  • dskt-backend:                                                                        
-    DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm test && npm   
-  run lint && npm run typecheck && npm run openapi:check && npm run build                
-                                                                                         
-      • Test Files: 20 passed (20)                                                       
-      • Tests: 108 passed (108)                                                          
-      • Lint / Typecheck / OpenAPI / Build: Clean (exit code 0)                          
-  • dskt-frontend:                                                                       
-    npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run    
-  build                                                                                  
-                                                                                         
-      • Test Files: 13 passed (13)                                                       
-      • Tests: 98 passed (98)                                                            
-      • Lint / Typecheck / OpenAPI / Build: Clean (exit code 0)     
 
 
-----------------------
-
-
- ###   Ticket 21  Implementation                                                                                                                                                               
- 1. Database Schema & Migrations (dskt-backend):                                        
-      • Added tables in schema.ts:                                                       
-          • departments (id, code, name, active)                                         
-          • teams (id, department_id, code, name, active)                                
-          • employees (id, employee_id unique external key, full_name, email,            
-          manager_employee_id, team_id, department_id, preferred_site_id, job_title,     
-          employment_status, active, last_import_id)                                     
-          • employee_imports (id, uploaded_by_user_id, original_filename, file_sha256,   
-          status, total_rows, valid_rows, invalid_rows, created_at, applied_at)          
-          • employee_import_rows (discrete relational staging columns mirroring accepted 
-          columns: employee_id, full_name, email, employment_status, manager_employee_id,
-          team_code, team_name, department_code, department_name, preferred_site_code,   
-          job_title, active, action, is_valid — strictly no JSONB or generic payload     
-          columns)                                                                       
-          • employee_import_row_errors (id, employee_import_row_id, column_name,         
-          error_code, message)                                                           
-      • Created and applied migration 0012_employee_imports.sql and updated _journal.json.
-  2. Workforce Backend Service & Routes (dskt-backend):                                  
-      • Installed @fastify/multipart and exceljs.                                        
-      • Created service.ts:                                                              
-          • Validates .xlsx extension, bounds file size to 5 MB, and limits rows to 5,000.
-          • Computes SHA-256 hash.                                                       
-          • Rejects macro-enabled workbooks (.xlsm or vbaProject.bin) and cell formulas  
-          (flags FORMULA_NOT_PERMITTED without executing).                               
-          • Validates required headers (Employee ID, Full Name, Employment Status), email
-          format, and resolves preferred_site_code against active sites.                 
-          • Detects duplicate workbook employee_id values, self-manager references,      
-          unresolved managers, and cyclic manager relationships.                         
-          • Classifies valid rows against existing employees records: CREATE, UPDATE, or 
-          UNCHANGED.                                                                     
-          • Flags validation failures as INVALID with relational staging errors.         
-          • Inserts relational staging rows and import summary metadata without touching 
-          employees, departments, or teams domain tables.                                
-          • Logs only safe metadata (importId, fileSha256, row counts), strictly omitting
-          personal data, cell values, and file contents.                                 
-      • Created routes.ts:                                                               
-          • POST /employee-imports/preview (multipart file upload, WORKPLACE_PLANNER     
-          authorized)                                                                    
-          • GET /employee-imports/:importId                                              
-          • GET /employee-imports/:importId/rows (with action filtering and pagination)  
-      • Registered routes and multipart in app.ts.                                       
-      • Regenerated openapi.json.                                                        
-  3. Frontend Implementation (dskt-frontend):                                            
-      • Synced OpenAPI contract and regenerated schema.ts.                               
-      • Created api.ts for workbook upload and staging queries.                          
-      • Built EmployeeImportPanel.tsx:                                                   
-          • Excel workbook upload dropzone with bounded file instructions and explicit   
-          notice that no domain rows are altered.                                        
-          • Summary counters for total rows, proposed creates, proposed updates,         
-          unchanged rows, and invalid rows.                                              
-          • Actionable filter tabs (All, Creates, Updates, Unchanged, Invalid).          
-          • Staging rows table with action tags and diagnostic error pills.              
-      • Wired EmployeeImportPanel into WorkspaceShell.tsx for Workplace Planners.        
-      • Added styles in styles.css.                                                      
-  4. Testing & Verification:                                                             
-      • Backend integration tests in employee-import-preview.integration.test.ts:        
-          • Role matrix (Workplace Planner 200, Facilities Admin 403, Viewer 403, System 
-          Admin 403, unauthenticated 401).                                               
-          • File bounds, macro rejection, corrupted files, and missing headers.          
-          • Cell formula rejection and relational staging with 0 JSONB columns.          
-          • Classification of CREATE, UPDATE, UNCHANGED, and INVALID rows.               
-          • Verified domain tables remain completely unchanged during preview.           
-      • Frontend component tests in EmployeeImportPanel.test.tsx.                        
-      • All backend tests (21 test files, 112 tests) and frontend tests (14 test files,  
-      102 tests) pass with 0 errors.                                                     
-      • Updated 21-preview-employee-workbook.md to Status: completed.                    
-      • Appended Ticket 21 summary and instructions for Ticket 22 to ticket-summary.md.  
-                                                                                         
-  ──────                                                                                 
-  ### How to Verify                                                                      
-                                                                                         
-  Backend:                                                                               
-                                                                                         
-    cd dskt-backend                                                                      
-    DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5433/dskt" npm test          
-    npm run lint && npm run typecheck && npm run openapi:check && npm run build          
-                                                                                         
-  Frontend:                                                                              
-                                                                                         
-    cd dskt-frontend                                                                     
-    npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run    
-  build                                                                                  

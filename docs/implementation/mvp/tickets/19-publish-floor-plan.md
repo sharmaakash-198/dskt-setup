@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 18 Preview publication validation  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Facilities Admin to confirm publication of the currently valid Draft as 
 
 ## Acceptance criteria
 
-- [ ] Publication re-runs authoritative validation against the submitted concurrency version.
-- [ ] In one transaction, the previous Published revision is archived when present and the Draft becomes Published.
-- [ ] At most one Draft and one Published revision exist for a Floor Plan.
-- [ ] Published and Archived revisions reject every geometry and metadata mutation.
-- [ ] A failed validation or database operation rolls back the entire lifecycle transition.
-- [ ] Publication is idempotent for safe retry and emits an audit event.
+- [x] Publication re-runs authoritative validation against the submitted concurrency version.
+- [x] In one transaction, the previous Published revision is archived when present and the Draft becomes Published.
+- [x] At most one Draft and one Published revision exist for a Floor Plan.
+- [x] Published and Archived revisions reject every geometry and metadata mutation.
+- [x] A failed validation or database operation rolls back the entire lifecycle transition.
+- [x] Publication is idempotent for safe retry and emits an audit event.
 
 ## Verification
 

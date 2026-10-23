@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 16 Autosave a leased edit session  
-**Status:** ready-for-agent
+**Status:** implemented
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Facilities Admin to undo and redo semantic editor commands and recover s
 
 ## Acceptance criteria
 
-- [ ] Undo and redo operate on semantic geometry commands rather than snapshots of viewport or rendered state.
-- [ ] Pan, Zoom, selection, and other visual-only actions do not enter domain undo history.
-- [ ] New edits after undo discard the invalid redo branch.
-- [ ] A stale concurrency response prevents silent overwrite and offers reload/reapply guidance with unsaved work clearly identified.
-- [ ] Successful conflict recovery restores a server-confirmed Draft and valid local history boundary.
-- [ ] Validation failures do not corrupt committed history or report a false saved state.
+- [x] Undo and redo operate on semantic geometry commands rather than snapshots of viewport or rendered state.
+- [x] Pan, Zoom, selection, and other visual-only actions do not enter domain undo history.
+- [x] New edits after undo discard the invalid redo branch.
+- [x] A stale concurrency response prevents silent overwrite and offers reload/reapply guidance with unsaved work clearly identified.
+- [x] Successful conflict recovery restores a server-confirmed Draft and valid local history boundary.
+- [x] Validation failures do not corrupt committed history or report a false saved state.
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 03 Enter a role-authorized workspace  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Workplace Planner to upload a bounded `.xlsx` workbook and inspect norma
 
 ## Acceptance criteria
 
-- [ ] Only Workplace Planner can upload supported bounded Excel workbooks.
-- [ ] The backend records import metadata and normalized relational staging rows without a generic payload column.
-- [ ] Employee ID is treated as the stable Employee key.
-- [ ] Preview distinguishes proposed create, update, unchanged, and invalid rows with summary counts.
-- [ ] No Employee domain row changes before explicit confirmation.
-- [ ] Workbook rows, unrestricted personal data, and file contents are absent from logs.
+- [x] Only Workplace Planner can upload supported bounded Excel workbooks.
+- [x] The backend records import metadata and normalized relational staging rows without a generic payload column.
+- [x] Employee ID is treated as the stable Employee key.
+- [x] Preview distinguishes proposed create, update, unchanged, and invalid rows with summary counts.
+- [x] No Employee domain row changes before explicit confirmation.
+- [x] Workbook rows, unrestricted personal data, and file contents are absent from logs.
 
 ## Verification
 
