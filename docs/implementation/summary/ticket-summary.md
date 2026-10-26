@@ -917,3 +917,79 @@ npm test && npm run lint && npm run typecheck && npm run openapi:check && npm ru
 ### Next Ticket
 
 - **Ticket 24:** `24-search-employee-directory.md` ("Search the Employee directory")
+
+---
+
+## Ticket 24: Search the Employee directory
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/24-search-employee-directory.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`
+
+### What Changed
+
+1. **Backend Employee Directory Search & Inspection (`dskt-backend`):**
+   - In `src/workforce/service.ts`:
+     - Added `searchEmployees(options, role)` supporting query parameter `q` (matching `employee_id`, `full_name`, and `email` via case-insensitive `ILIKE`), criteria filters for `departmentCode`, `teamCode`, `siteCode`, `employmentStatus`, and `includeInactive`, with bounded pagination (`limit`, `offset`).
+     - Added `getEmployee(idOrEmployeeId, role)` supporting direct lookup by UUID or `employee_id`.
+     - Implemented strict field-level projections and inactive visibility per role:
+       - **Viewer:** approved active-Employee directory fields only (`id`, `employeeId`, `fullName`, `email`, `jobTitle`, `department`, `team`, `preferredSite`). Inactive employees are strictly hidden. Manager details, employment status, and active flags are omitted.
+       - **Facilities Admin:** employee summary data needed for map context (`id`, `employeeId`, `fullName`, `jobTitle`, `department`, `team`, `preferredSite`). Inactive employees are strictly hidden. Email, manager details, employment status, and active flags are omitted.
+       - **Workplace Planner:** can inspect manager relationships (`managerEmployeeId`, `manager` object), employment state (`employmentStatus`, `active`), and access inactive employees when `includeInactive` is enabled.
+     - Added `resolveEffectiveDirectoryRole(roles)` to determine the caller's highest permitted role projection.
+   - In `src/workforce/routes.ts`:
+     - Added `GET /employees` and `GET /employees/:id` with Zod validation, OpenAPI schemas, and role enforcement (`requirePrincipal`, `requireAnyRole('FACILITIES_ADMIN', 'WORKPLACE_PLANNER', 'VIEWER')`). Unauthenticated requests return 401; callers without domain roles (e.g. System Admin alone) return 403.
+     - Enforced safe telemetry logging without logging query strings, search criteria, employee names, emails, or personal data.
+   - Regenerated and verified `contract/openapi.json`.
+
+2. **Frontend UI & API Client (`dskt-frontend`):**
+   - Synced `openapi/dskt-backend.openapi.json` and regenerated TypeScript API types in `src/api/schema.ts`.
+   - In `src/workforce/api.ts`: added `searchEmployees` and `getEmployee` client methods with strong typing and error handling.
+   - Created `src/workforce/EmployeeDirectoryPanel.tsx`:
+     - Accessible search interface with bounded inputs (`maxLength={100}`).
+     - Supports filters for Department, Team, Site, Employment Status, and Inactive toggle (for Workplace Planners).
+     - Provides all required accessible feedback states: idle/empty, loading (`aria-busy`), no-results, unavailable/error, and permission-denied.
+     - Full keyboard navigation: list navigation with `ArrowUp`/`ArrowDown`, selection/inspection with `Enter`/`Space`, and dismiss with `Escape`.
+     - Inspected details card displaying role-permitted fields and relationship details.
+     - Bounded pagination controls (Previous/Next) with page count indicators.
+   - Mounted `EmployeeDirectoryPanel` in `src/workspace/WorkspaceShell.tsx` for Facilities, Workplace, and Viewer workspaces.
+
+3. **Testing & Verification:**
+   - **Backend Integration Tests (`test/employee-directory-search.integration.test.ts`):**
+     - Verified matching across `employeeId`, `fullName`, `email`, `departmentCode`, `teamCode`, and `siteCode`.
+     - Verified bounded pagination with limits and offsets.
+     - Verified inactive employee visibility constraints across all roles.
+     - Verified field-level role projections for Workplace Planner, Viewer, and Facilities Admin.
+     - Verified direct inspection by ID / employee ID.
+     - Verified authorization matrix (401 unauthenticated, 403 System Admin alone).
+     - Verified input bounds rejection (oversized query or limit).
+     - Verified browser-ready end-to-end flow: importing a synthetic workbook, previewing, confirming, and successfully finding the employee via search and inspection.
+   - **Frontend Component Tests (`src/workforce/EmployeeDirectoryPanel.test.tsx`):**
+     - Verified idle, loading, no-results, unavailable error, and permission denied states.
+     - Verified search result display and role-specific inspection projections.
+     - Verified keyboard navigation (`ArrowDown`, `ArrowUp`, `Enter`, `Escape`).
+     - Verified bounded pagination controls.
+   - All backend tests (24 test files, 124 tests) and frontend tests (15 test files, 111 tests) pass with 0 errors.
+   - All lint, typecheck, openapi:check, and build checks pass cleanly across both packages.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 25:** `25-preview-and-confirm-batch-labels.md` ("Preview and confirm batch labels")
