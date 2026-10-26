@@ -773,3 +773,71 @@ Ticket 20 has been implemented and fully verified across both dskt-backend and d
     cd dskt-frontend                                                                     
     npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run    
   build                                                                                  
+
+
+---
+
+## Ticket 22: Diagnose an invalid workbook
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/22-diagnose-invalid-workbook.md`
+- **Status:** completed
+- **Repositories:** `dskt-backend`, `dskt-frontend`, `dskt-setup`
+
+### What Changed
+
+1. **Workforce Backend Service & Routes (`dskt-backend`):**
+   - **Formula & Macro Inspection:** Formula cells are rejected and never executed, reporting column names when available with `FORMULA_NOT_PERMITTED`. Macro-enabled workbooks (.xlsm and archives containing `vbaProject.bin`) are rejected.
+   - **Duplicate Employee IDs:** Identifies all duplicate occurrences across the workbook and flags every affected row with `DUPLICATE_EMPLOYEE_ID`.
+   - **Manager Cycle Detection:** Accurately detects direct (A -> B -> A) and indirect/multi-node (A -> B -> C -> A) manager reference cycles, retaining row-specific `CYCLIC_MANAGER_REFERENCE` diagnostics.
+   - **Team & Department Consistency:** Validates that imported team and department codes do not conflict with existing database definitions or create contradictory mappings within the workbook (`CONFLICTING_TEAM_DEPARTMENT`).
+   - **Relational Diagnostics:** Errors are permanently retained in `dskt.employee_import_row_errors` with row number, column name, stable error code, and user-safe message.
+   - **Confirmation Denial:** Added `POST /employee-imports/:importId/confirm` restricted to `WORKPLACE_PLANNER` role. Denies confirmation with `400 cannot_confirm_invalid_import` if the import contains any blocking errors or is in `INVALID` status.
+   - **Operational Retention & Artifact Removal:** Temporary upload workbook artifacts are stored at `.uploads/workforce/${importId}.xlsx` with a documented 24-hour retention window (`DEFAULT_OPERATIONAL_RETENTION_MS`). Implemented `purgeExpiredUploadArtifacts(retentionWindowMs)` which unlinks expired disk files while preserving safe metadata (`employee_imports`) and relational diagnostics (`employee_import_row_errors`) in PostgreSQL.
+   - **Redacted Logging:** Server logs strictly omit cell contents, employee names, and personal data, recording only safe operational metadata (`importId`, `status`, `userId`).
+   - **Contract:** Regenerated `contract/openapi.json`.
+
+2. **Frontend UI & API Client (`dskt-frontend`):**
+   - **Synced OpenAPI Contract:** Synced `openapi/dskt-backend.openapi.json` and regenerated `schema.ts`.
+   - **API Client:** Added `confirmEmployeeImport` function and mapped error copy for confirmation denial.
+   - **`EmployeeImportPanel.tsx`:**
+     - Blocking error alert callout with quick action button to filter invalid rows.
+     - Accessible row navigation controls ("Previous row", "Next row", "Next invalid row") with polite ARIA live region announcements and focused row styling.
+     - Import confirmation section: explicitly denies confirmation and disables the "Confirm Import" button (`aria-disabled="true"`) when invalid rows are detected.
+     - Enables confirmation when 0 invalid rows exist, invoking the confirmation endpoint and displaying confirmation feedback.
+
+3. **Testing & Verification:**
+   - **Backend Integration Tests (`test/employee-import-diagnostics.integration.test.ts`):**
+     - Cyclic manager references (multi-node cycles) and duplicate IDs with retained PostgreSQL errors.
+     - Confirmation denial through HTTP and PostgreSQL verification that domain tables remain untouched.
+     - Formula cells and macro rejection.
+     - Artifact removal after retention window while safe metadata and diagnostics remain.
+     - Role restriction matrix for confirmation endpoint (Workplace Planner 400 denied invalid, Facilities Admin 403, Viewer 403, unauthenticated 401).
+   - **Frontend Component Tests (`src/workforce/EmployeeImportPanel.test.tsx`):**
+     - Accessible error filtering and invalid row callout.
+     - Accessible row navigation (Next row, Next invalid row, live region status).
+     - Confirmation denial on invalid imports and successful confirmation on ready imports.
+   - All backend tests (22 test files, 116 tests) and frontend tests (14 test files, 103 tests) pass with 0 errors.
+   - All lint, typecheck, openapi:check, and build checks pass cleanly across both packages.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 23:** `23-confirm-employee-import.md` ("Confirm an Employee import")
