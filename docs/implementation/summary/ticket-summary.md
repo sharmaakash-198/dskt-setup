@@ -841,3 +841,79 @@ npm test && npm run lint && npm run typecheck && npm run openapi:check && npm ru
 ### Next Ticket
 
 - **Ticket 23:** `23-confirm-employee-import.md` ("Confirm an Employee import")
+
+
+## Ticket 23: Confirm an Employee import
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/23-confirm-employee-import.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`, `dskt-setup`
+
+### What Changed
+
+1. **Database Schema & Migrations (`dskt-backend`):**
+   - Added migration `drizzle/0013_employee_import_confirmation.sql` and updated `meta/_journal.json` to add column `idempotency_key TEXT` and an index on `dskt.employee_imports`.
+   - Updated Drizzle table definition in `src/db/schema.ts` to include `idempotencyKey` and index `employee_imports_idempotency_key_idx`.
+
+2. **Atomic Confirmation Implementation (`dskt-backend`):**
+   - In `WorkforceService.confirmImport`:
+     - Row-level lock (`SELECT ... FOR UPDATE`) on `employee_imports`.
+     - Validates import status (`READY`), rejects invalid rows (`cannot_confirm_invalid_import`) and non-ready imports.
+     - Checks idempotency: if an import is already `APPLIED` and retried with the same `idempotencyKey`, returns the existing applied summary idempotently; retries with different or missing keys fail with `already_applied`.
+     - Stale detection: verifies `expectedFileSha256`, verifies that all referenced site codes in the import remain active, and checks that referenced external managers still exist in active employees. Any mismatch or missing entity rejects with `stale_preview`.
+     - Multi-phase atomic application in a single database transaction:
+       - Upserts `departments` (`code`, `name`).
+       - Upserts `teams` (`code`, `name`, `department_id`).
+       - Upserts `employees` in Pass 1 (`full_name`, `email`, `employment_status`, `team_id`, `department_id`, `preferred_site_id`, `job_title`, `active`, `last_import_id`) without immediate manager references to resolve forward-references within the import without foreign-key order conflicts.
+       - Updates `employees` in Pass 2 setting `manager_employee_id` once all employees exist in `dskt.employees`.
+       - Updates `employee_imports` status to `APPLIED`, records `applied_at` and `idempotency_key`.
+       - Emits an audit event (`employee_import.confirmed`) in `dskt.audit_events` with safe counts, strictly omitting workbook rows, employee names, emails, and PII.
+     - Rollback on failure: any error rolls back every employee mutation cleanly, leaving 0 partial records in domain tables, and updates import status to `FAILED` for diagnosis.
+     - Omission behavior: employees omitted from the workbook remain completely untouched, active, and unchanged.
+   - Updated routes in `src/workforce/routes.ts`: accepts optional body `{ idempotencyKey, expectedFileSha256 }` and `idempotency-key` header, requires `WORKPLACE_PLANNER` role.
+   - Regenerated and verified `contract/openapi.json`.
+
+3. **Frontend UI & API Client (`dskt-frontend`):**
+   - Synced `openapi/dskt-backend.openapi.json` and regenerated `src/api/schema.ts`.
+   - Updated `confirmEmployeeImport` in `src/workforce/api.ts` to accept options `{ idempotencyKey, expectedFileSha256 }` and map error code `stale_preview`.
+   - Updated `EmployeeImportPanel.tsx`:
+     - Sends `expectedFileSha256` during confirmation.
+     - Displays `Applied` badge and notice when an import is confirmed.
+     - Renders confirmation success message with timestamp when applied, disabling the confirm button with label `Import Applied`.
+     - Handles and displays error alerts when confirmation is rejected (e.g. stale preview).
+
+4. **Testing & Verification:**
+   - **Backend Integration Tests (`test/employee-import-confirmation.integration.test.ts`):**
+     - Success & atomic application (creates, updates, manager forward-references, teams, departments, sites, audit event without PII).
+     - Omission behavior (unreferenced employees remain active and untouched).
+     - Idempotency & duplicate retry with same key vs different/missing key.
+     - Stale preview rejection (checksum mismatch and archived site).
+     - Failure rollback and diagnosable `FAILED` state.
+     - Role-based authorization matrix (`WORKPLACE_PLANNER` 200, `FACILITIES_ADMIN` 403, `VIEWER` 403, unauthenticated 401).
+   - **Frontend Component Tests (`src/workforce/EmployeeImportPanel.test.tsx`):**
+     - Confirmation flow with synthetic data, status changes to Applied, button disabled, and applied notice.
+     - Rejection error alert handling.
+   - All backend tests (23 test files, 122 tests) and frontend tests (14 test files, 104 tests) pass with 0 errors.
+   - All lint, typecheck, openapi:check, and build checks pass cleanly across both packages.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 24:** `24-search-employee-directory.md` ("Search the Employee directory")
