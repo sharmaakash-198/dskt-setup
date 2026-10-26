@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dskt-local-only}
       POSTGRES_DB: ${POSTGRES_DB:-dskt}
     ports:
-      - "5433:5432"
+      - "${DSKT_POSTGRES_HOST_PORT:-5436}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dskt} -d ${POSTGRES_DB:-dskt}"]
       interval: 2s
@@ -25,12 +25,12 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-dskt}:${POSTGRES_PASSWORD:-dskt-local-only}@postgres:5432/${POSTGRES_DB:-dskt}
-      CORS_ORIGIN: http://localhost:8080
+      CORS_ORIGIN: http://localhost:${DSKT_FRONTEND_HOST_PORT:-8082}
       LOG_LEVEL: info
       AUTH_ENV: local
       SESSION_SECRET: ${SESSION_SECRET:-local-development-session-secret-32ch-min}
     ports:
-      - "3000:3000"
+      - "${DSKT_BACKEND_HOST_PORT:-3001}:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,9 +51,9 @@ services:
     build:
       context: ./dskt-frontend
       args:
-        VITE_API_BASE_URL: http://localhost:3000
+        VITE_API_BASE_URL: http://localhost:${DSKT_BACKEND_HOST_PORT:-3001}
     ports:
-      - "8080:8080"
+      - "${DSKT_FRONTEND_HOST_PORT:-8082}:8080"
     depends_on:
       backend:
         condition: service_healthy

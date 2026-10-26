@@ -49,9 +49,10 @@ Start the local spine with Docker Compose from the repository root:
 docker compose up --build
 ```
 
-- Frontend: <http://localhost:8080>
-- Backend liveness: <http://localhost:3000/health/live>
-- Database readiness: <http://localhost:3000/health/ready>
+- Frontend: <http://localhost:8082> (override with `DSKT_FRONTEND_HOST_PORT`)
+- Backend liveness: <http://localhost:3001/health/live> (`DSKT_BACKEND_HOST_PORT`)
+- PostgreSQL on host: `localhost:5436` (`DSKT_POSTGRES_HOST_PORT`; optional for host-side tools)
+- Database readiness: <http://localhost:3001/health/ready>
 
 ## Status
 
