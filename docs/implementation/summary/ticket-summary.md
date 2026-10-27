@@ -1057,3 +1057,79 @@ npm test && npm run lint && npm run typecheck && npm run openapi:check && npm ru
 ### Next Ticket
 
 - **Ticket 26:** `26-assign-employee-to-space.md` ("Assign an Employee to a space")
+
+
+---
+
+## Ticket 26: Assign an Employee to a space
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/26-assign-employee-to-space.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`
+
+### What Changed
+
+1. **Backend (`dskt-backend`):**
+   - **Schema & Migration (`drizzle/0014_assignments.sql`, `drizzle/meta/_journal.json`, `src/db/schema.ts`):**
+     - Created `dskt.assignments` table storing `placementIdentityId`, `employeeId`, `assignedByUserId`, `startedAt`, `endedAt`, and optional `clientCommandId`.
+     - Enabled PostgreSQL extension `btree_gist` and added check constraint `assignments_end_after_start` (`ended_at IS NULL OR ended_at > started_at`).
+     - Enforced space non-overlap constraint using PostgreSQL exclusion constraint:
+       `CONSTRAINT assignments_placement_period_excl EXCLUDE USING gist (placement_identity_id WITH =, tstzrange(started_at, COALESCE(ended_at, 'infinity'::timestamptz), '[)') WITH &&)`.
+     - Ensured boundary-touching intervals (`[t1, t2)` and `[t2, t3)`) do not overlap and are permitted.
+     - Permitted multi-space assignment (the same employee can hold overlapping assignments to different spaces).
+   - **Domain Logic & Service (`src/assignments/service.ts`, `src/assignments/types.ts`):**
+     - Implemented `AssignmentService.createAssignment()` validating active employee existence, active non-archived location hierarchy (floor/building/site), active Published floor plan revision, and template assignability (`assignable === true` and spatial class `PHYSICAL`).
+     - Added domain logic interval overlap pre-checks and caught PostgreSQL exclusion violation (code `23P01`) mapping to 409 `space_already_assigned`.
+     - Enforced idempotency via `clientCommandId` deduplication (replaying with identical payload returns existing assignment; mismatch returns 409 `command_id_payload_mismatch`).
+     - Transactional execution and audit log persistence via `auditEvents` table with action `assignment.created`.
+     - Implemented `AssignmentService.getAssignments()` supporting filtering by `employeeId`, `placementIdentityId`, and `floorId`.
+   - **Routes & API (`src/assignments/routes.ts`, `src/app.ts`):**
+     - Mounted `POST /assignments` (authorized exclusively for `WORKPLACE_PLANNER` role).
+     - Mounted `GET /assignments` (accessible to `FACILITIES_ADMIN`, `WORKPLACE_PLANNER`, and `VIEWER`).
+     - Exported OpenAPI contract and generated schema in `contract/openapi.json`.
+   - **Testing (`test/assignments.integration.test.ts`):**
+     - Verified boundary-touching periods, true overlap rejection, concurrent creation race condition serialization, employee multi-assignment, retry idempotency, role-based authorization matrix, non-assignable space rejection, and audit trail persistence against isolated PostgreSQL test databases.
+     - All 27 backend test files (136 tests) pass cleanly.
+
+2. **Frontend (`dskt-frontend`):**
+   - **OpenAPI Schema & Client (`openapi/dskt-backend.openapi.json`, `src/api/schema.ts`, `src/assignments/api.ts`):**
+     - Synchronized OpenAPI spec and generated TypeScript API client types.
+     - Implemented typed `createAssignment()` and `listAssignments()` helpers with human-readable error code mappings.
+   - **Assignment Panel (`src/assignments/AssignSpacePanel.tsx`, `src/styles.css`):**
+     - Created accessible workflow for Workplace Planners to assign an employee to an assignable space in the Published map.
+     - Dynamically displays candidate space details (label, template, physical class, location, and current space occupancy) beside the selected employee's details and **all existing assignments held by that employee**.
+     - Provides employee directory search with selection and change actions.
+     - Enforces datetime validation ensuring end date is after start date, disabling submit when invalid.
+     - Pre-checks and alerts on space occupancy conflicts before submission.
+     - Transactional submission with generated `clientCommandId` for idempotency and immediate UI feedback.
+   - **Map & Workspace Integration (`src/floors/BoundaryEditor.tsx`, `src/floors/FloorWorkspace.tsx`):**
+     - Added "Assign Space" action button in the Published floor plan summary header for Workplace Planners.
+     - Integrated current assignment status ("Vacant" vs employee name, code, and date badge) into the placed space inspector panel on Published maps.
+     - Added "Assign Employee to Space" button directly in the space details card to launch assignment workflow with candidate space pre-selected.
+     - Added assigned employee indicators in the accessible placed spaces list and map renderer.
+   - **Component & Integration Tests (`src/assignments/AssignSpacePanel.test.tsx`, `src/floors/FloorWorkspace.test.tsx`):**
+     - Tested candidate space filtering, employee directory search, employee existing assignments display, period validation, conflict warnings, transactional creation with idempotency, and error handling.
+     - Tested Workspace header actions, inspector assignment display, and panel opening.
+     - All 17 frontend test files (128 tests) pass cleanly.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 27:** `27-end-and-inspect-assignments.md` ("End and inspect assignments")
