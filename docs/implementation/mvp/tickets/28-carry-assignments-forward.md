@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 19 Publish a Floor Plan; 26 Assign an Employee to a space  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ When a newer Floor Plan revision is published, preserve Assignments whose stable
 
 ## Acceptance criteria
 
-- [ ] A new Draft can be based on the current Published revision without changing its immutable source.
-- [ ] Stable Placement Identities connect corresponding placements across revisions.
-- [ ] Publication preserves valid active and future Assignments when the target remains assignable.
-- [ ] Removed, duplicated, changed-to-nonassignable, or otherwise invalid Assignment targets produce actionable pre-publication errors.
-- [ ] Publication, prior-revision archival, and Assignment reconciliation occur in one transaction.
-- [ ] Failure rolls back every lifecycle and Assignment change.
+- [x] A new Draft can be based on the current Published revision without changing its immutable source.
+- [x] Stable Placement Identities connect corresponding placements across revisions.
+- [x] Publication preserves valid active and future Assignments when the target remains assignable.
+- [x] Removed, duplicated, changed-to-nonassignable, or otherwise invalid Assignment targets produce actionable pre-publication errors.
+- [x] Publication, prior-revision archival, and Assignment reconciliation occur in one transaction.
+- [x] Failure rolls back every lifecycle and Assignment change.
 
 ## Verification
 

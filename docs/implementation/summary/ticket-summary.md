@@ -1133,3 +1133,231 @@ npm test && npm run lint && npm run typecheck && npm run openapi:check && npm ru
 ### Next Ticket
 
 - **Ticket 27:** `27-end-and-inspect-assignments.md` ("End and inspect assignments")
+
+
+---
+
+## Ticket 28: Carry Assignments into a replacement revision
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/28-carry-assignments-forward.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`
+
+### What Changed
+
+1. **Backend (`dskt-backend`):**
+   - **Branching Replacement Drafts (`src/floor-plans/service.ts`, `src/floor-plans/routes.ts`):**
+     - Implemented `createDraftRevision()`: copies vertices and placed elements from the current Published revision to create Revision N+1 in `DRAFT` status without mutating the source revision.
+     - Strictly preserved stable `placementIdentityId` across placed elements so placements remain traceable back to their original physical space identities.
+     - Added `POST /floors/:floorId/floor-plan/revisions` endpoint (operation `createFloorPlanRevision`) authorized exclusively for `FACILITIES_ADMIN`. Rejects with `409 Conflict` (`draft_already_exists`) if a draft already exists for the floor plan.
+   - **Pre-Publication Assignment Reconciliation (`src/floor-plans/service.ts`, `src/floor-plans/routes.ts`):**
+     - Enhanced `validateDraftForPublicationInternal()`: when validating a replacement draft for publication, inspects active and future assignments associated with the floor plan's placement identities.
+     - Flags actionable publication validation errors in category `ASSIGNMENT`:
+       - `assignment_target_removed`: An active or future assignment targets a placement identity that was deleted in the draft.
+       - `assignment_target_not_assignable`: An assigned space had its template changed to non-assignable or a non-`PHYSICAL` spatial class.
+       - `assignment_target_invalid`: Assigned space template is archived or not current.
+       - `assignment_target_conflict`: Duplicate active assignments detected for a single placement identity.
+     - Extended OpenAPI schema for `PublicationValidationError` to include category and entityType `ASSIGNMENT`.
+   - **Atomic Transactional Publication & Archival (`src/floor-plans/service.ts`):**
+     - Enhanced `publishRevision()` to run all actions inside a single PostgreSQL database transaction:
+       1. Reconcile assignments against draft placements and verify zero blockers.
+       2. Mark the existing Published revision as `ARCHIVED`.
+       3. Promote the Draft revision to `PUBLISHED`.
+       4. Auto-release active editor leases.
+       5. Audit log publication with carried assignment metrics in details (`carriedAssignmentsCount`).
+     - Any failure or validation blocker immediately aborts and rolls back all lifecycle, revision, and assignment changes.
+   - **Integration Testing (`test/carry-assignments.integration.test.ts`):**
+     - Created comprehensive test suite verifying:
+       - Replacement draft creation preserving stable placement identity IDs while maintaining published revision immutability.
+       - Publication preserving valid active and future assignments for unchanged and moved physical spaces.
+       - Publication blocking with detailed `ASSIGNMENT` errors when assigned spaces are deleted or changed to non-assignable templates.
+       - Database transaction integrity and complete rollback upon simulated failure.
+     - All 28 test suites (137 tests) pass against PostgreSQL.
+
+2. **Frontend (`dskt-frontend`):**
+   - **OpenAPI Schema & Client (`openapi/dskt-backend.openapi.json`, `src/api/schema.ts`, `src/floors/floor-plan-api.ts`):**
+     - Synchronized OpenAPI spec and generated TypeScript API client types.
+     - Added typed `createDraftRevision()` client function.
+     - Updated `PublicationValidationError` types and error code copy mappings to include `ASSIGNMENT` issues (`assignment_target_removed`, `assignment_target_not_assignable`, `assignment_target_invalid`, `assignment_target_conflict`).
+   - **Boundary Editor & Error Feedback (`src/floors/BoundaryEditor.tsx`):**
+     - Added `'ASSIGNMENT': 'Assignment Reconciliation Issues'` to `VALIDATION_CATEGORY_LABELS`.
+     - Displays blocking assignment reconciliation errors with clear diagnostic messages before publication.
+   - **Floor Workspace Actions (`src/floors/FloorWorkspace.tsx`):**
+     - Added "Create Replacement Draft" button for Facilities Admin when a published map exists and has no active draft (`data-testid="create-replacement-draft-btn"`).
+     - Fixed view mode resolution logic so published floor plans render cleanly when no draft revision is present.
+     - Handled draft creation lifecycle: calls `createDraftRevision()`, switches view mode to `DRAFT`, and reloads active leases/draft editor.
+   - **Component & Integration Tests (`src/floors/BoundaryEditor.test.tsx`, `src/floors/FloorWorkspace.test.tsx`):**
+     - Tested "Create Replacement Draft" visibility, creation flow, and view mode switching.
+     - Tested rendering of assignment reconciliation errors and successful publication carrying forward assignments.
+     - All 17 test files (133 tests) pass cleanly.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 27:** `27-end-and-inspect-assignments.md` ("End and inspect assignments")
+
+
+---
+
+## Ticket 27: End and inspect Assignments
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/27-end-and-inspect-assignments.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`
+
+### What Changed
+
+1. **Backend (`dskt-backend`):**
+   - **Schema Migration (`drizzle/0015_assignment_ended_by.sql`, `drizzle/meta/_journal.json`, `src/db/schema.ts`):**
+     - Added nullable `ended_by_user_id` foreign key referencing `app_users.id` on table `assignments`.
+   - **Domain Types & Error Codes (`src/assignments/types.ts`):**
+     - Added `AssignmentStatus` enum type (`'CURRENT' | 'FUTURE' | 'ENDED'`).
+     - Added `EndAssignmentInput`, `QueryAssignmentHistoryFilter`, `PaginatedAssignmentHistory`, and updated `AssignmentView` with `endedByUserId` and `status`.
+     - Added domain error codes: `assignment_not_found`, `assignment_already_ended`, `invalid_assignment_time_range`.
+   - **Assignment Lifecycle & Projections (`src/assignments/service.ts`, `src/assignments/routes.ts`):**
+     - Implemented `computeAssignmentStatus(startedAt, endedAt, now)` to deterministically classify assignments into Current, Future, or Ended states.
+     - Implemented `endAssignment(input)`:
+       - Transactional, idempotent update that sets `endedAt` to the provided valid timestamp and tracks `endedByUserId`.
+       - Validates that `endedAt > startedAt` and prevents silent rewriting of already historical/ended assignments.
+       - Supports client idempotency via `commandId` retry tracking.
+       - Emits audit log entry `assignment.ended`.
+     - Implemented `getAssignmentHistory(filter)`:
+       - Serves paginated history (`limit`, `offset`, `total`, `items`) of historical/ended assignments (`endedAt <= NOW()`), ordered newest first.
+       - Accessible only to authorized roles (`WORKPLACE_PLANNER` and `FACILITIES_ADMIN`).
+     - Enhanced `getAssignments(filter, effectiveRole)`:
+       - Role-based projection enforcement: `VIEWER` users are strictly restricted to permitted current occupancy only, preventing exposure of past historical occupancy.
+     - Endpoints added/updated:
+       - `POST /assignments/:id/end` (authorized for `WORKPLACE_PLANNER`).
+       - `GET /assignments/history` (authorized for `FACILITIES_ADMIN` and `WORKPLACE_PLANNER`; returns 403 for `VIEWER`).
+       - `GET /assignments` with status filtering and viewer projection constraints.
+   - **Integration Testing (`test/end-and-inspect-assignments.integration.test.ts`):**
+     - Comprehensive integration tests verifying state classification, ending validation, idempotency, role-based visibility, pagination, and audit logging.
+     - All 29 backend test files (138 tests) pass.
+
+2. **Frontend (`dskt-frontend`):**
+   - **OpenAPI Client & API Services (`openapi/dskt-backend.openapi.json`, `src/api/schema.ts`, `src/assignments/api.ts`):**
+     - Synced OpenAPI contract and regenerated typed client schemas.
+     - Added `endAssignment()` and `getAssignmentHistory()` API methods.
+     - Added helper utilities: `classifyAssignmentState()` and `getSpaceAssignmentBreakdown()`.
+   - **Space Inspection & Status Badges (`src/floors/BoundaryEditor.tsx`, `src/assignments/AssignSpacePanel.tsx`, `src/styles.css`):**
+     - Inspected spaces in BoundaryEditor clearly distinguish `Current`, `Future`, `Ended`, and `Vacant` states with dedicated status badges.
+     - Added "End Assignment" action in the space inspector panel for Workplace Planners when an active or future assignment exists.
+     - Updated `AssignSpacePanel` to display assignment state badges on existing employee assignments.
+   - **End Assignment & History Modals (`src/floors/FloorWorkspace.tsx`):**
+     - Implemented End Assignment modal (`data-testid="end-assignment-modal"`) allowing Workplace Planners to specify an end timestamp with immediate validation.
+     - Implemented paginated Assignment History drawer (`data-testid="assignment-history-drawer"`) displaying ended assignments with pagination controls (`data-testid="history-prev-page"`, `data-testid="history-next-page"`).
+     - Added role-aware header controls: "Assignment History" button available to Workplace Planner and Facilities Admin, hidden from Viewers.
+     - Added Facilities Admin read-only summary badge (`data-testid="facilities-admin-tag"`).
+   - **Testing (`src/floors/FloorWorkspace.test.tsx`):**
+     - Added integration tests covering space inspection state badges, ending active assignments, and paginated assignment history viewing.
+     - All 17 frontend test files (138 tests) pass.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 29:** `29-locate-employee-on-map.md` ("Locate an Employee on a map")
+
+
+---
+
+## Ticket 29: Locate an Employee on the map
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/29-locate-employee-on-map.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`
+
+### What Changed
+
+1. **Backend (`dskt-backend`):**
+   - **Active Assignment Projections (`src/workforce/service.ts`, `src/workforce/routes.ts`):**
+     - Extended `EmployeeDirectoryItem` with `activeAssignmentCount: number` and `activeAssignments: EmployeeActiveAssignment[]`.
+     - Defined `EmployeeActiveAssignment` model with fields: `{ id, placementIdentityId, spaceLabel, siteId, siteName, buildingId, buildingName, floorId, floorName, startedAt, endedAt, isAccessible }`.
+     - Added `fetchActiveAssignmentsForEmployees()` to efficiently query active assignments (`startedAt <= NOW() AND (endedAt IS NULL OR endedAt > NOW())`), resolving current published floor plans, placed elements, floors, buildings, and sites in a joined query.
+     - Resolved `isAccessible` (`!isArchived && hasPublishedRev && hasPlacedElement`) ensuring stale, draft, or deleted spaces fail safely.
+     - Added `employeeActiveAssignmentSchema` and updated `employeeDirectoryItemSchema` in OpenAPI contract.
+   - **Role-Based Location & Occupancy Projections (`src/assignments/types.ts`, `src/assignments/service.ts`, `src/assignments/routes.ts`):**
+     - Updated `AssignmentView` and `assignmentViewSchema` with `siteId`, `buildingId`, `isAccessible`, and made `assignedByUserId` optional.
+     - Stripped internal audit fields (`assignedByUserId`, `endedByUserId`, `clientCommandId`) for `VIEWER` roles to ensure only approved directory and current-occupancy fields are visible.
+   - **HTTP Integration Testing (`test/locate-employee-on-map.integration.test.ts`):**
+     - Verified state communications (unassigned, single active space, multiple active spaces).
+     - Verified role-projected response fields for Viewers.
+     - Verified navigation attributes (siteId, buildingId, floorId, placementIdentityId).
+     - Verified replacement revision carry-forward resolution.
+     - Verified archived/stale location handling and security isolation from draft data.
+     - All 30 test files (139 tests) pass against PostgreSQL.
+
+2. **Frontend (`dskt-frontend`):**
+   - **Contract Synchronization & API (`openapi/dskt-backend.openapi.json`, `src/api/schema.ts`, `src/workforce/api.ts`, `src/assignments/api.ts`):**
+     - Synced OpenAPI spec and regenerated typed client schemas.
+     - Added `EmployeeActiveAssignment` and updated `EmployeeDirectoryItem` with active assignment metrics and locations.
+     - Updated `Assignment` type with `siteId`, `buildingId`, `isAccessible`.
+   - **Directory Search & Non-Canvas Details (`src/workforce/EmployeeDirectoryPanel.tsx`, `src/styles.css`):**
+     - Rendered status badges in search results communicating `Unassigned`, `1 active space`, and `N active spaces` without relying on color alone (`data-testid="assignment-status-*"`).
+     - Single active assignment location meta displayed directly in employee card (`data-testid="single-assignment-location"`).
+     - Added non-canvas location details in the employee detail inspector (`data-testid="non-canvas-location-details"`), listing all active assignments, location hierarchy (Site > Building > Floor > Space), assignment validity period, status badges (`Active on Published Map` vs `Location Unavailable / Archived`), and a "Locate on Map" action button (`data-testid="locate-on-map-btn-${id}"`).
+   - **Hierarchy Navigation (`src/sites/SitesPanel.tsx`, `src/workspace/WorkspaceShell.tsx`):**
+     - Wired `targetLocation` state across `WorkspaceShell`, `EmployeeDirectoryPanel`, and `SitesPanel`.
+     - Implemented automatic navigation effect in `SitesPanel`: asynchronously loads Site, Building, and Floor hierarchy to transition view directly to the target floor workspace with `initialPlacementIdentityId`.
+   - **Space Focus, Inspector & Safe Stale State (`src/floors/BoundaryEditor.tsx`, `src/floors/FloorWorkspace.tsx`):**
+     - Enforced `effectiveViewMode = 'PUBLISHED'` in `FloorWorkspace` when `initialPlacementIdentityId` is present, strictly preventing draft exposure.
+     - Automatically selects and focuses target placement matching `initialPlacementIdentityId` when placements load, triggering selection affordance (`data-testid="selection-affordance"`) and opening the space details panel with employee occupancy details.
+     - Displays explicit safe fallback alert (`data-testid="stale-location-state"`) if the target space is stale or absent from the current published revision.
+   - **Testing (`src/floors/FloorWorkspace.test.tsx`, `src/workforce/EmployeeDirectoryPanel.test.tsx`):**
+     - Added unit and interaction tests covering search state communication badges, non-canvas details path, target location navigation, published map auto-focus, accessible space inspector, and stale space safe handling.
+     - All 17 test files (142 tests) pass cleanly.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 30:** `30-pass-local-release-gate.md` ("Pass local release gate")
