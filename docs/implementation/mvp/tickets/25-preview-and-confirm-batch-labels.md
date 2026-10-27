@@ -2,7 +2,7 @@
 
 **Repositories:** dskt-frontend, dskt-backend  
 **Blocked by:** 20 Browse Published maps and revision history  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,12 +10,12 @@ Allow a Workplace Planner to generate a deterministic label proposal for selecte
 
 ## Acceptance criteria
 
-- [ ] Workplace Planner can select eligible Published Physical placements and configure the documented label sequence.
-- [ ] Preview is deterministic and shows proposed labels without mutating placement records.
-- [ ] Duplicate, collision, ineligible-space, and stale-revision conflicts are reported before confirmation.
-- [ ] Confirmation applies the exact accepted preview in one transaction or applies nothing.
-- [ ] Labels are visible in the shared map renderer and accessible HTML details.
-- [ ] Application is idempotent, authorized, and audited.
+- [x] Workplace Planner can select eligible Published Physical placements and configure the documented label sequence.
+- [x] Preview is deterministic and shows proposed labels without mutating placement records.
+- [x] Duplicate, collision, ineligible-space, and stale-revision conflicts are reported before confirmation.
+- [x] Confirmation applies the exact accepted preview in one transaction or applies nothing.
+- [x] Labels are visible in the shared map renderer and accessible HTML details.
+- [x] Application is idempotent, authorized, and audited.
 
 ## Verification
 

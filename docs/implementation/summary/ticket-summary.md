@@ -993,3 +993,67 @@ npm test && npm run lint && npm run typecheck && npm run openapi:check && npm ru
 ### Next Ticket
 
 - **Ticket 25:** `25-preview-and-confirm-batch-labels.md` ("Preview and confirm batch labels")
+
+
+---
+
+## Ticket 25: Preview and confirm batch labels
+
+- **Ticket File:** `dskt-setup/docs/implementation/mvp/tickets/25-preview-and-confirm-batch-labels.md`
+- **Repositories:** `dskt-backend`, `dskt-frontend`
+
+### What Changed
+
+1. **Backend (`dskt-backend`):**
+   - **Deterministic Ordering & Sequence Generation (`src/floor-plans/batch-labels.ts`):**
+     - Implemented `orderPlacements()` supporting `ROW_MAJOR` (Y ascending, X ascending), `COLUMN_MAJOR` (X ascending, Y ascending), and `SELECTION` (preserved order of selected placement IDs).
+     - Implemented `generateBatchLabels()` producing deterministic sequential labels formatted as `${prefix}${String(startNumber + index).padStart(width, '0')}`.
+     - Implemented `detectLabelConflicts()` validating that all selected spaces are of class `PHYSICAL` (`ineligible_space`), that no label is duplicated within the proposed batch (`duplicate`), and that proposed labels do not collide with existing placements not being relabeled (`collision`).
+     - Implemented SHA-256 canonical preview token generation (`computeBatchPreviewToken()`).
+   - **Routes & Service (`src/floor-plans/routes.ts`, `src/floor-plans/service.ts`):**
+     - `POST /floors/:floorId/floor-plan/revisions/:revisionId/batch-labels/preview`: Generates a deterministic preview proposal for selected Published physical spaces without mutating any placement records.
+     - `POST /floors/:floorId/floor-plan/revisions/:revisionId/batch-labels/confirm`: Applies the exact accepted preview in a single database transaction, validating concurrency version and preview token, requiring `WORKPLACE_PLANNER` role, enforcing idempotency via `clientCommandId`, and writing audit log records.
+   - **Verification & Tests (`test/batch-labels.unit.test.ts`, `test/batch-labels.integration.test.ts`):**
+     - Unit tests for all ordering strategies, collision detection, duplicate detection, and ineligible-space detection.
+     - Integration tests covering preview immutability, atomic transactional confirmation, concurrency conflicts (`stale_revision`), idempotency replay, role authorization denial (denying Viewer, Facilities Admin, and unauthenticated callers), and audit trail persistence.
+
+2. **Frontend (`dskt-frontend`):**
+   - **OpenAPI Schema & API Client (`openapi/dskt-backend.openapi.json`, `src/api/schema.ts`, `src/floors/floor-plan-api.ts`):**
+     - Synchronized OpenAPI spec and generated TypeScript client types for `previewBatchLabels` and `confirmBatchLabels`.
+     - Added typed API functions `previewBatchLabels` and `confirmBatchLabels` with error mapping for `stale_revision`, `invalid_preview_token`, `label_collision`, and `duplicate_label`.
+   - **Batch Labeling Panel (`src/floors/BatchLabelPanel.tsx`, `src/styles.css`):**
+     - Created accessible UI for Workplace Planners to configure prefix, start number, zero-padding width, and ordering strategy (`ROW_MAJOR`, `COLUMN_MAJOR`, `SELECTION`).
+     - Interactive space selection with quick action buttons ("Select all physical", "Clear") and visual badges for spatial classes (`PHYSICAL`, `ZONE`, `OBSTACLE`).
+     - Preview section rendering proposed labels table, placement IDs, positions, and current vs. proposed labels.
+     - Conflicts alert rendering duplicate, collision, ineligible-space, and stale-revision diagnostics, disabling confirmation when conflicts are present.
+     - Atomic confirmation with client command idempotency and callback to refresh the floor plan revision.
+   - **Workspace & Map Integration (`src/floors/FloorWorkspace.tsx`, `src/sites/SitesPanel.tsx`, `src/workspace/WorkspaceShell.tsx`):**
+     - Integrated `isPlanner` authorization into `WorkspaceShell`, `SitesPanel`, and `FloorWorkspace`.
+     - Added "Batch Label Spaces" trigger in the Published floor plan summary header for Workplace Planners.
+     - Verified that confirmed labels immediately update placements and render in the shared map SVG `<text>` elements and accessible HTML placed spaces list.
+   - **Tests (`src/floors/BatchLabelPanel.test.tsx`, `src/floors/FloorWorkspace.test.tsx`):**
+     - 7 unit/component tests in `BatchLabelPanel.test.tsx` covering sequence configuration, selection helpers, deterministic proposal rendering, conflict detection, transaction confirmation, stale revision handling, and planner role authorization.
+     - Added tests in `FloorWorkspace.test.tsx` verifying planner action visibility and panel toggling in the Published floor plan.
+
+---
+
+### How to Verify
+
+**Backend:**
+```bash
+cd dskt-backend
+DATABASE_URL="postgres://dskt:dskt-local-only@localhost:5436/dskt" npm test
+npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+**Frontend:**
+```bash
+cd dskt-frontend
+npm test && npm run lint && npm run typecheck && npm run openapi:check && npm run build
+```
+
+---
+
+### Next Ticket
+
+- **Ticket 26:** `26-assign-employee-to-space.md` ("Assign an Employee to a space")
