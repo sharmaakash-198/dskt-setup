@@ -41,19 +41,43 @@ This repository is the documentation and setup workspace. It intentionally conta
 
 The MVP includes floor-plan editing, reusable element templates, versioned floor plans, employee import, employee-to-space assignment, and a Workplace Planner map/search experience. Attendance integrations, live presence, team-layout optimization, manager views, employee self-service, and real-time collaborative editing are deferred.
 
-## Local execution
+## Local execution & Clean Start
 
-Start the local spine with Docker Compose from the repository root:
+Start the complete product locally with a single command from `dskt-setup`:
 
 ```bash
+# Clean start: resets volumes, creates database, applies migrations,
+# bootstraps synthetic users, and starts all services
+./scripts/clean-start.sh
+
+# Or standard Docker Compose:
 docker compose up --build
 ```
 
 - Frontend: <http://localhost:8082> (override with `DSKT_FRONTEND_HOST_PORT`)
 - Backend liveness: <http://localhost:3001/health/live> (`DSKT_BACKEND_HOST_PORT`)
-- PostgreSQL on host: `localhost:5436` (`DSKT_POSTGRES_HOST_PORT`; optional for host-side tools)
+- PostgreSQL on host: `localhost:5436` (`DSKT_POSTGRES_HOST_PORT`)
 - Database readiness: <http://localhost:3001/health/ready>
+
+### Synthetic Users (Local Development Personas)
+
+Clean start automatically provisions the four core personas with Argon2id-hashed credentials:
+
+| Username | Role | Password | Description |
+|---|---|---|---|
+| `admin` | `SYSTEM_ADMIN` | `dskt-local-admin` | Access administration, user role assignments, lease reclamation |
+| `facilities` | `FACILITIES_ADMIN` | `dskt-local-facilities` | Sites, buildings, floors, boundary editing, templates, publications |
+| `planner` | `WORKPLACE_PLANNER` | `dskt-local-planner` | Workforce import, batch space labeling, space assignments |
+| `viewer` | `VIEWER` | `dskt-local-viewer` | Read-only directory and published map browsing, employee locating |
+
+## Local Release Gate Verification
+
+Run the full clean-room release gate verification script to validate dependencies, containers, OpenAPI drift, migrations from empty, synthetic data, full test suites, and performance budgets:
+
+```bash
+./scripts/verify-local-release-gate.sh
+```
 
 ## Status
 
-Ticket 01 (Run DSKT locally) is completed. The runnable spine starts frontend, backend, and PostgreSQL with health and readiness separation via the generated OpenAPI client.
+Ticket 30 (Pass local release gate) is completed. The product runs locally via Docker with all critical user journeys, comprehensive authorization coverage against real PostgreSQL, accessibility alternatives, and verified 2,000-element performance budgets.

@@ -2,7 +2,7 @@
 
 **Repositories:** DSKT-setup, dskt-frontend, dskt-backend  
 **Blocked by:** 27 End and inspect Assignments; 29 Locate an Employee on the map  
-**Status:** ready-for-agent
+**Status:** completed
 
 ## What to build
 
@@ -10,13 +10,13 @@ Turn the completed functionality into a reproducible Docker-only local release c
 
 ## Acceptance criteria
 
-- [ ] A documented clean start creates the database, applies migrations, bootstraps synthetic users, and starts the complete product with one command.
-- [ ] Critical browser journeys pass: publish Floor, import Employees, label spaces, create/end Assignment, carry Assignment forward, and locate Employee.
-- [ ] Every protected operation has representative allow/deny authorization coverage against real PostgreSQL.
-- [ ] Automated accessibility checks and targeted keyboard journeys pass, including non-canvas map alternatives.
-- [ ] A representative Floor with 2,000 Placed Elements meets documented interaction and loading budgets on the agreed development profile.
-- [ ] Logs, audit records, correlation IDs, health checks, and failure states are demonstrably useful without leaking credentials or Employee rows.
-- [ ] No AWS credentials, Entra configuration, Vercel, Supabase, production data, or internet-hosted runtime is required.
+- [x] A documented clean start creates the database, applies migrations, bootstraps synthetic users, and starts the complete product with one command.
+- [x] Critical browser journeys pass: publish Floor, import Employees, label spaces, create/end Assignment, carry Assignment forward, and locate Employee.
+- [x] Every protected operation has representative allow/deny authorization coverage against real PostgreSQL.
+- [x] Automated accessibility checks and targeted keyboard journeys pass, including non-canvas map alternatives.
+- [x] A representative Floor with 2,000 Placed Elements meets documented interaction and loading budgets on the agreed development profile.
+- [x] Logs, audit records, correlation IDs, health checks, and failure states are demonstrably useful without leaking credentials or Employee rows.
+- [x] No AWS credentials, Entra configuration, Vercel, Supabase, production data, or internet-hosted runtime is required.
 
 ## Verification
 

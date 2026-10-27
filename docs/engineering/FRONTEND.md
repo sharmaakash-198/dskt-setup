@@ -89,7 +89,7 @@ Every route defines loading, empty, permission-denied, recoverable error, and un
 - Cache derived transformed polygon paths by geometry and transform.
 - Avoid React rerenders for pointer movement where imperative Konva updates suffice.
 - Keep transient drag state out of remote caches.
-- Profile with a representative 2,000-element floor.
+- Profile with a representative 2,000-element floor per [Performance Budgets](PERFORMANCE_BUDGETS.md).
 - Load employee details and historical Assignments on demand.
 
 ## UI consistency

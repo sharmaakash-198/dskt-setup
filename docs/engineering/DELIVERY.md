@@ -116,7 +116,7 @@ Before production:
 - access and role administration are documented;
 - employee-data retention is approved;
 - incident ownership is assigned;
-- representative load tests cover a 2,000-element floor and expected employee volume.
+- representative load tests cover a 2,000-element floor per [Performance Budgets](PERFORMANCE_BUDGETS.md) and expected employee volume.
 
 ## Environment gates
 

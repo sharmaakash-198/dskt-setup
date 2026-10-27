@@ -29,6 +29,7 @@ services:
       LOG_LEVEL: info
       AUTH_ENV: local
       SESSION_SECRET: ${SESSION_SECRET:-local-development-session-secret-32ch-min}
+      BOOTSTRAP_SYNTHETIC_USERS: ${BOOTSTRAP_SYNTHETIC_USERS:-true}
     ports:
       - "${DSKT_BACKEND_HOST_PORT:-3001}:3000"
     depends_on:
